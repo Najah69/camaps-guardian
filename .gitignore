@@ -1,0 +1,23 @@
+# Gradle / Android
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.iml
+.idea/
+
+# Réglages propres à la machine (chemin du SDK)
+local.properties
+
+# Signature : ne jamais publier la clé privée ni ses mots de passe
+guardian.jks
+*.jks
+*.keystore
+keystore.properties
+
+# Divers
+*.log
+*.hprof
+.DS_Store
+Thumbs.db

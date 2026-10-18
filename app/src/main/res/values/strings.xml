@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CamAPS Guardian</string>
+    <string name="app_sub">Surveillance du Bluetooth et de CamAPS FX</string>
+</resources>
