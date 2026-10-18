@@ -9,6 +9,8 @@ toujours — et qui tente de rétablir ce qui ne l'est plus.
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7f52ff)
 ![Sans root](https://img.shields.io/badge/root-facultatif-lightgrey)
 
+**[⬇︎ Télécharger la dernière version](https://github.com/Najah69/camaps-guardian/releases/latest)**
+
 ---
 
 ## 🛑 À lire avant tout
@@ -155,8 +157,8 @@ Rien d'autre. Pas de compte, pas de connexion Internet, pas de serveur.
 
 ### 7.1 Récupérer l'application
 
-Téléchargez `app-release.apk` depuis la page **Releases** de ce dépôt, ou compilez-la vous-même
-(voir [§20](#20-compiler)).
+Téléchargez [`app-release.apk`](https://github.com/Najah69/camaps-guardian/releases/latest)
+depuis la page **Releases** de ce dépôt, ou compilez-la vous-même (voir [§20](#20-compiler)).
 
 ### 7.2 Autoriser l'installation depuis une source inconnue
 
