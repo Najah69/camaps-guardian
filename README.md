@@ -566,6 +566,9 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [ ] Comportement sur plusieurs semaines (fuite mémoire, dérive de la batterie)
 - [ ] Mode Doze profond sur une nuit complète
 - [ ] Android 8 à 14 (seul Android 15 a été utilisé)
+- [ ] La version **1.1** elle-même n'a pas été réinstallée sur le téléphone (il a été déconnecté
+      pendant sa préparation) : elle ne diffère de la version testée que par le numéro de version et
+      la déclaration des langues, mais ce n'est pas la même signature de fichier
 
 Si vous testez sur un autre appareil, un retour dans les *Issues* a de la valeur — surtout s'il
 est négatif.
@@ -1135,6 +1138,9 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 - [ ] Behaviour over several weeks (memory leak, battery drift)
 - [ ] Deep Doze mode over a whole night
 - [ ] Android 8 to 14 (only Android 15 was used)
+- [ ] Version **1.1** itself was not reinstalled on the phone (it was disconnected while being
+      prepared): it differs from the tested build only by the version number and the language
+      declarations, but it is not the same file signature
 
 If you test on another device, feedback in the *Issues* has value — especially if it is negative.
 
