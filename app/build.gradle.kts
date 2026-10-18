@@ -17,8 +17,8 @@ android {
         // le Bluetooth par programme (BluetoothAdapter.enable() renvoie false).
         // En restant sous 33, le watchdog peut rallumer le Bluetooth tout seul.
         targetSdk = 32
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -57,6 +57,12 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    // Déclare les deux langues (français, anglais) au système : Android 13+ propose alors
+    // le choix de la langue de l'application dans Réglages ▸ Applications ▸ CamAPS Guardian.
+    androidResources {
+        generateLocaleConfig = true
     }
 
     packaging {

@@ -7,6 +7,7 @@ import android.app.job.JobScheduler
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import com.najah.camapsguardian.R
 import com.najah.camapsguardian.ui.MainActivity
 
 /**
@@ -44,9 +45,15 @@ object Alarms {
 
         try {
             am.setAlarmClock(AlarmManager.AlarmClockInfo(at, show(ctx)), tick(ctx, RC_CLOCK))
-            Logbook.add("alarme", "prochaine ronde ${Fmt.time(at)} (alarmClock, $safe min)")
+            Logbook.add(
+                ctx.tr(R.string.cat_alarm),
+                ctx.tr(R.string.log_next_round, Fmt.time(at), safe)
+            )
         } catch (t: Throwable) {
-            Logbook.add("alarme", "setAlarmClock refusé (${t.message}) → setExactAndAllowWhileIdle")
+            Logbook.add(
+                ctx.tr(R.string.cat_alarm),
+                ctx.tr(R.string.log_alarm_clock_refused, t.message ?: "")
+            )
             try {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, tick(ctx, RC_CLOCK))
             } catch (t2: Throwable) {
@@ -54,7 +61,10 @@ object Alarms {
                     @Suppress("DEPRECATION")
                     am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, tick(ctx, RC_CLOCK))
                 } catch (t3: Throwable) {
-                    Logbook.add("alarme", "aucune alarme posée : ${t3.message}")
+                    Logbook.add(
+                        ctx.tr(R.string.cat_alarm),
+                        ctx.tr(R.string.log_alarm_none, t3.message ?: "")
+                    )
                 }
             }
         }
@@ -88,7 +98,10 @@ object Alarms {
                 .build()
             js.schedule(info)
         } catch (t: Throwable) {
-            Logbook.add("alarme", "JobScheduler indisponible : ${t.message}")
+            Logbook.add(
+                ctx.tr(R.string.cat_alarm),
+                ctx.tr(R.string.log_job_unavailable, t.message ?: "")
+            )
         }
     }
 
@@ -100,6 +113,6 @@ object Alarms {
             (ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler).cancel(JOB_ID)
         }
         Prefs.get(ctx).update { it.copy(nextCheckAt = 0L) }
-        Logbook.add("alarme", "alarmes annulées")
+        Logbook.add(ctx.tr(R.string.cat_alarm), ctx.tr(R.string.log_alarm_cancelled))
     }
 }

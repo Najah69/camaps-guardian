@@ -1,6 +1,7 @@
 package com.najah.camapsguardian.core
 
 import android.content.Context
+import com.najah.camapsguardian.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -9,27 +10,36 @@ object Control {
 
     fun enable(ctx: Context) {
         val p = Prefs.get(ctx).update { it.copy(enabled = true) }
-        Logbook.add("contrôle", "surveillance ACTIVÉE (contrôle ${p.checkMinutes} min)")
+        Logbook.add(
+            ctx.tr(R.string.cat_control),
+            ctx.tr(R.string.log_control_enabled, p.checkMinutes)
+        )
         Alarms.schedule(ctx, p.checkMinutes)
-        WatchdogService.start(ctx, "activation")
+        WatchdogService.start(ctx, ctx.tr(R.string.log_trigger_activation))
     }
 
     fun disable(ctx: Context) {
         Prefs.get(ctx).update { it.copy(enabled = false, nextCheckAt = 0L) }
-        Logbook.add("contrôle", "surveillance DÉSACTIVÉE")
+        Logbook.add(ctx.tr(R.string.cat_control), ctx.tr(R.string.log_control_disabled))
         Alarms.cancel(ctx)
         WatchdogService.stop(ctx)
     }
 
     fun setInterval(ctx: Context, minutes: Int) {
         val p = Prefs.get(ctx).update { it.copy(checkMinutes = minutes) }
-        Logbook.add("contrôle", "intervalle de contrôle : $minutes min")
+        Logbook.add(
+            ctx.tr(R.string.cat_control),
+            ctx.tr(R.string.log_control_interval, minutes)
+        )
         if (p.enabled) Alarms.schedule(ctx, minutes)
     }
 
     fun setRecover(ctx: Context, minutes: Int) {
         Prefs.get(ctx).update { it.copy(recoverMinutes = minutes) }
-        Logbook.add("contrôle", "intervalle de rétablissement : $minutes min")
+        Logbook.add(
+            ctx.tr(R.string.cat_control),
+            ctx.tr(R.string.log_control_recover, minutes)
+        )
     }
 
     fun setFlag(ctx: Context, block: (P) -> P) {
@@ -37,13 +47,13 @@ object Control {
     }
 
     suspend fun checkNow(ctx: Context): String = withContext(Dispatchers.IO) {
-        Watchdog(ctx).check("manuel", manual = true)
+        Watchdog(ctx).check(ctx.tr(R.string.log_trigger_manual), manual = true)
     }
 
     suspend fun relaunchCamaps(ctx: Context): String = withContext(Dispatchers.IO) {
         val cam = CamapsCtl(ctx)
         val target = cam.installed().firstOrNull()
-            ?: return@withContext "CamAPS FX introuvable sur ce téléphone"
+            ?: return@withContext ctx.tr(R.string.ev_not_installed)
         cam.launch(target)
     }
 
@@ -51,7 +61,10 @@ object Control {
         val found = CamapsCtl(ctx).detect()
         if (found.isNotEmpty()) {
             Prefs.get(ctx).update { it.copy(targets = found.joinToString(",")) }
-            Logbook.add("camaps", "paquet(s) détecté(s) : ${found.joinToString(", ")}")
+            Logbook.add(
+                ctx.tr(R.string.cat_camaps),
+                ctx.tr(R.string.log_camaps_detected, found.joinToString(", "))
+            )
         }
         found
     }

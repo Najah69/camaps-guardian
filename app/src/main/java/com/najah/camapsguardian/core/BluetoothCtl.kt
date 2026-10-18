@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.os.SystemClock
+import com.najah.camapsguardian.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -62,19 +63,35 @@ class BluetoothCtl(private val ctx: Context) {
 
         try {
             val result = a.enable()
-            Logbook.add("bt", "BluetoothAdapter.enable() → $result")
+            Logbook.add(
+                ctx.tr(R.string.cat_bt),
+                ctx.tr(R.string.log_bt_enable_result, result.toString())
+            )
         } catch (t: Throwable) {
-            Logbook.add("bt", "enable() refusé : ${t.javaClass.simpleName} ${t.message ?: ""}")
+            Logbook.add(
+                ctx.tr(R.string.cat_bt),
+                ctx.tr(
+                    R.string.log_bt_enable_refused,
+                    t.javaClass.simpleName,
+                    t.message ?: ""
+                )
+            )
         }
         if (waitOn(3500L)) return@withContext BtEnable.ENABLED
 
         for (cmd in listOf("cmd bluetooth_manager enable", "svc bluetooth enable")) {
             val r = Shell.runPrivileged(cmd)
             if (r.ok) {
-                Logbook.add("bt", "« $cmd » via ${r.how} → ${r.output.take(80)}")
+                Logbook.add(
+                    ctx.tr(R.string.cat_bt),
+                    ctx.tr(R.string.log_bt_cmd_ok, cmd, r.how, r.output.take(80))
+                )
                 if (waitOn(4000L)) return@withContext BtEnable.ENABLED
             } else {
-                Logbook.add("bt", "« $cmd » via ${r.how} refusé (${r.output.take(60)})")
+                Logbook.add(
+                    ctx.tr(R.string.cat_bt),
+                    ctx.tr(R.string.log_bt_cmd_refused, cmd, r.how, r.output.take(60))
+                )
             }
         }
         return@withContext BtEnable.NEEDS_USER
@@ -85,7 +102,7 @@ class BluetoothCtl(private val ctx: Context) {
     @Suppress("DEPRECATION")
     suspend fun cycle(): Boolean = withContext(Dispatchers.IO) {
         val a = adapter ?: return@withContext false
-        Logbook.add("bt", "cycle Bluetooth demandé")
+        Logbook.add(ctx.tr(R.string.cat_bt), ctx.tr(R.string.log_bt_cycle_requested))
         try {
             a.disable()
         } catch (t: Throwable) {
@@ -93,7 +110,7 @@ class BluetoothCtl(private val ctx: Context) {
         }
         SystemClock.sleep(2500L)
         val r = ensureOn(15_000L)
-        Logbook.add("bt", "cycle terminé : ${r.name}")
+        Logbook.add(ctx.tr(R.string.cat_bt), ctx.tr(R.string.log_bt_cycle_done, r.name))
         r == BtEnable.ENABLED || r == BtEnable.ON
     }
 

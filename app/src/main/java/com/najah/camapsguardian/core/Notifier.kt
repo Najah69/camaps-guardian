@@ -26,8 +26,12 @@ object Notifier {
         if (Build.VERSION.SDK_INT < 26) return
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(
-            NotificationChannel(CH_WATCH, "Surveillance", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "État de la ronde de surveillance (silencieux)"
+            NotificationChannel(
+                CH_WATCH,
+                ctx.tr(R.string.ch_watch_name),
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = ctx.tr(R.string.ch_watch_desc)
                 setShowBadge(false)
                 setSound(null, null)
                 enableVibration(false)
@@ -35,8 +39,12 @@ object Notifier {
             }
         )
         nm.createNotificationChannel(
-            NotificationChannel(CH_ALERT, "Alertes", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Bluetooth perdu ou CamAPS FX arrêté — action nécessaire"
+            NotificationChannel(
+                CH_ALERT,
+                ctx.tr(R.string.ch_alert_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = ctx.tr(R.string.ch_alert_desc)
                 enableVibration(true)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
@@ -81,7 +89,7 @@ object Notifier {
     fun alertBt(ctx: Context, detail: String) {
         val n = NotificationCompat.Builder(ctx, CH_ALERT)
             .setSmallIcon(R.drawable.ic_stat_guardian)
-            .setContentTitle("Bluetooth éteint — action requise")
+            .setContentTitle(ctx.tr(R.string.notif_bt_title))
             .setContentText(detail)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -90,7 +98,11 @@ object Notifier {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(action(ctx, ActionActivity.MODE_BT))
             .setFullScreenIntent(action(ctx, ActionActivity.MODE_BT), true)
-            .addAction(0, "Rallumer le Bluetooth", action(ctx, ActionActivity.MODE_BT))
+            .addAction(
+                0,
+                ctx.tr(R.string.notif_bt_action),
+                action(ctx, ActionActivity.MODE_BT)
+            )
             .build()
         post(ctx, ID_ALERT_BT, n)
     }
@@ -98,7 +110,7 @@ object Notifier {
     fun alertApp(ctx: Context, detail: String) {
         val n = NotificationCompat.Builder(ctx, CH_ALERT)
             .setSmallIcon(R.drawable.ic_stat_guardian)
-            .setContentTitle("CamAPS FX arrêté — action requise")
+            .setContentTitle(ctx.tr(R.string.notif_app_title))
             .setContentText(detail)
             .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -107,7 +119,11 @@ object Notifier {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(action(ctx, ActionActivity.MODE_APP))
             .setFullScreenIntent(action(ctx, ActionActivity.MODE_APP), true)
-            .addAction(0, "Relancer CamAPS FX", action(ctx, ActionActivity.MODE_APP))
+            .addAction(
+                0,
+                ctx.tr(R.string.notif_app_action),
+                action(ctx, ActionActivity.MODE_APP)
+            )
             .build()
         post(ctx, ID_ALERT_APP, n)
     }
@@ -139,7 +155,10 @@ object Notifier {
             val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.notify(id, n)
         } catch (t: Throwable) {
-            Logbook.add("notif", "notification impossible : ${t.javaClass.simpleName}")
+            Logbook.add(
+                ctx.tr(R.string.cat_notif),
+                ctx.tr(R.string.notif_failed, t.javaClass.simpleName)
+            )
         }
     }
 }

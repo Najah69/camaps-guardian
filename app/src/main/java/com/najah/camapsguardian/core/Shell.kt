@@ -1,6 +1,7 @@
 package com.najah.camapsguardian.core
 
 import android.content.pm.PackageManager
+import com.najah.camapsguardian.R
 import java.util.concurrent.TimeUnit
 
 /**
@@ -31,7 +32,7 @@ object Shell {
             val finished = p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)
             if (!finished) {
                 p.destroy()
-                Result(false, "délai dépassé", cmd.firstOrNull() ?: "?")
+                Result(false, t(R.string.log_timeout), cmd.firstOrNull() ?: "?")
             } else {
                 val out = try {
                     p.inputStream.bufferedReader().use { it.readText() }
@@ -52,7 +53,10 @@ object Shell {
         rootChecked = true
         val r = exec(listOf("su", "-c", "id"), 5000)
         rootOk = r.ok && r.output.contains("uid=0")
-        Logbook.add("shell", if (rootOk) "root disponible" else "pas de root")
+        Logbook.add(
+            t(R.string.cat_shell),
+            if (rootOk) t(R.string.log_root_ok) else t(R.string.log_no_root)
+        )
         return rootOk
     }
 
@@ -84,7 +88,10 @@ object Shell {
                 false
             }
         }
-        Logbook.add("shell", if (shizukuOk) "Shizuku disponible" else "Shizuku absent ou non autorisé")
+        Logbook.add(
+            t(R.string.cat_shell),
+            if (shizukuOk) t(R.string.log_shizuku_ok) else t(R.string.log_shizuku_absent)
+        )
         return shizukuOk
     }
 
@@ -93,10 +100,13 @@ object Shell {
         val c = shizukuClass() ?: return false
         return try {
             c.getMethod("requestPermission", Integer.TYPE).invoke(null, 0)
-            Logbook.add("shell", "autorisation Shizuku demandée")
+            Logbook.add(t(R.string.cat_shell), t(R.string.log_shizuku_requested))
             true
-        } catch (t: Throwable) {
-            Logbook.add("shell", "demande Shizuku impossible : ${t.message}")
+        } catch (ex: Throwable) {
+            Logbook.add(
+                t(R.string.cat_shell),
+                t(R.string.log_shizuku_request_failed, ex.message ?: "")
+            )
             false
         }
     }
@@ -111,7 +121,7 @@ object Shell {
                 String::class.java
             )
             val p = m.invoke(null, arrayOf("sh", "-c", command), null, null) as? Process
-                ?: return Result(false, "processus Shizuku nul", "shizuku")
+                ?: return Result(false, t(R.string.log_shizuku_null_process), "shizuku")
             val finished = p.waitFor(20_000L, TimeUnit.MILLISECONDS)
             val out = try {
                 p.inputStream.bufferedReader().use { it.readText() }
@@ -125,12 +135,12 @@ object Shell {
             }
             if (!finished) {
                 p.destroy()
-                Result(false, "délai dépassé", "shizuku")
+                Result(false, t(R.string.log_timeout), "shizuku")
             } else {
                 Result(p.exitValue() == 0, (out + err).trim(), "shizuku")
             }
-        } catch (t: Throwable) {
-            Result(false, t.message ?: "erreur Shizuku", "shizuku")
+        } catch (ex: Throwable) {
+            Result(false, ex.message ?: t(R.string.log_shizuku_error), "shizuku")
         }
     }
 
@@ -145,7 +155,7 @@ object Shell {
         if (hasShizuku()) {
             shizukuExec(command)?.let { return it }
         }
-        return Result(false, "aucun privilège (ni root ni Shizuku)", "aucun")
+        return Result(false, t(R.string.log_no_privilege), "aucun")
     }
 
     fun canElevate(): Boolean = hasRoot() || hasShizuku()

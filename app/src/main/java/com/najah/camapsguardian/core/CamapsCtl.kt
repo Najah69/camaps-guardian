@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.najah.camapsguardian.R
 
 enum class Presence { ALIVE, NOT_ALIVE, UNKNOWN, MISSING, NO_TARGET }
 
@@ -27,6 +28,11 @@ data class PresenceInfo(
  *  3. la dernière fois que CamAPS est passé au premier plan (accès aux stats d'usage).
  */
 class CamapsCtl(private val ctx: Context) {
+
+    companion object {
+        /** Valeur renvoyée par [launch] en cas d'échec (comparée par l'appelant). */
+        const val FAILED = "failed"
+    }
 
     private val pm: PackageManager get() = ctx.packageManager
     private val prefs: Prefs get() = Prefs.get(ctx)
@@ -73,7 +79,7 @@ class CamapsCtl(private val ctx: Context) {
         val found = detect()
         if (found.isEmpty()) return null
         prefs.update { it.copy(targets = found.joinToString(",")) }
-        return "cible corrigée : ${found.joinToString(", ")}"
+        return ctx.tr(R.string.log_target_fixed, found.joinToString(", "))
     }
 
     // ------------------------------------------------------------ présence
@@ -81,11 +87,11 @@ class CamapsCtl(private val ctx: Context) {
     fun evaluate(now: Long = System.currentTimeMillis()): PresenceInfo {
         val p = prefs.value
         if (p.targetList.isEmpty()) {
-            return PresenceInfo(Presence.NO_TARGET, "aucune cible configurée")
+            return PresenceInfo(Presence.NO_TARGET, ctx.tr(R.string.ev_no_target))
         }
         val pkgs = installed()
         if (pkgs.isEmpty()) {
-            return PresenceInfo(Presence.MISSING, "CamAPS FX introuvable sur ce téléphone")
+            return PresenceInfo(Presence.MISSING, ctx.tr(R.string.ev_not_installed))
         }
 
         val notes = mutableListOf<String>()
@@ -95,23 +101,24 @@ class CamapsCtl(private val ctx: Context) {
         if (active != null) {
             val hit = pkgs.firstOrNull { active.contains(it) }
             if (hit != null) {
-                return PresenceInfo(Presence.ALIVE, "notification active ($hit)", hit)
+                return PresenceInfo(
+                    Presence.ALIVE,
+                    ctx.tr(R.string.ev_notification_active, hit),
+                    hit
+                )
             }
-            notes += "aucune notification active"
+            notes += ctx.tr(R.string.ev_no_notification)
             val seen = PresenceListener.lastSeen(pkgs)
-            if (seen > 0L) notes += "dernière notification ${Fmt.ago(seen)}"
+            if (seen > 0L) notes += ctx.tr(R.string.ev_last_notification, Fmt.ago(ctx, seen))
         } else {
-            notes += "accès aux notifications non accordé"
+            notes += ctx.tr(R.string.ev_no_notif_access)
         }
 
         // 2. Historique des arrêts
         if (Build.VERSION.SDK_INT >= 30) {
-            exitReason(pkgs, now)?.let { ev ->
-                notes += ev
-                if (ev.contains("plant", true) ||
-                    ev.contains("fig", true) ||
-                    ev.contains("mémoire", true)
-                ) {
+            exitReason(pkgs, now)?.let { (fatal, text) ->
+                notes += text
+                if (fatal) {
                     return PresenceInfo(Presence.NOT_ALIVE, notes.joinToString(" · "))
                 }
             }
@@ -121,15 +128,15 @@ class CamapsCtl(private val ctx: Context) {
         val last = if (Sys.hasUsageAccess(ctx)) lastForeground(pkgs) else 0L
         if (Sys.hasUsageAccess(ctx)) {
             if (last > 0L) {
-                notes += "dernier premier plan ${Fmt.ago(last)}"
+                notes += ctx.tr(R.string.ev_last_foreground, Fmt.ago(ctx, last))
                 if (now - last < 3 * 60_000L) {
                     return PresenceInfo(Presence.ALIVE, notes.joinToString(" · "))
                 }
             } else {
-                notes += "jamais vu au premier plan"
+                notes += ctx.tr(R.string.ev_never_foreground)
             }
         } else {
-            notes += "accès aux stats d'usage non accordé"
+            notes += ctx.tr(R.string.ev_no_usage_access)
         }
 
         // Conclusion : sans notification active et sans activité récente → l'application ne tourne plus.
@@ -140,8 +147,9 @@ class CamapsCtl(private val ctx: Context) {
         }
     }
 
+    /** Renvoie [arrêt fatal, texte] du dernier arrêt récent, ou null s'il n'y en a pas. */
     @RequiresApi(30)
-    private fun exitReason(pkgs: List<String>, now: Long): String? {
+    private fun exitReason(pkgs: List<String>, now: Long): Pair<Boolean, String>? {
         val am = ctx.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return null
         for (pkg in pkgs) {
             val list = try {
@@ -152,18 +160,33 @@ class CamapsCtl(private val ctx: Context) {
             // On ne retient que les arrêts récents : au-delà, les autres signaux suffisent.
             val recent = list.firstOrNull { now - it.timestamp < 20 * 60_000L } ?: continue
             val reason = when (recent.reason) {
-                ApplicationExitInfo.REASON_CRASH -> "plantage"
-                ApplicationExitInfo.REASON_CRASH_NATIVE -> "plantage natif"
-                ApplicationExitInfo.REASON_ANR -> "application figée (ANR)"
-                ApplicationExitInfo.REASON_LOW_MEMORY -> "manque de mémoire"
-                ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "ressources excessives"
-                ApplicationExitInfo.REASON_SIGNALED -> "tuée par un signal"
-                ApplicationExitInfo.REASON_USER_REQUESTED -> "arrêt demandé"
-                ApplicationExitInfo.REASON_EXIT_SELF -> "arrêt volontaire"
-                ApplicationExitInfo.REASON_OTHER -> "arrêt"
-                else -> "raison ${recent.reason}"
+                ApplicationExitInfo.REASON_CRASH -> ctx.tr(R.string.ev_reason_crash)
+                ApplicationExitInfo.REASON_CRASH_NATIVE -> ctx.tr(R.string.ev_reason_native_crash)
+                ApplicationExitInfo.REASON_ANR -> ctx.tr(R.string.ev_reason_anr)
+                ApplicationExitInfo.REASON_LOW_MEMORY -> ctx.tr(R.string.ev_reason_low_memory)
+                ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE ->
+                    ctx.tr(R.string.ev_reason_resources)
+                ApplicationExitInfo.REASON_SIGNALED -> ctx.tr(R.string.ev_reason_signalled)
+                ApplicationExitInfo.REASON_USER_REQUESTED -> ctx.tr(R.string.ev_reason_user)
+                ApplicationExitInfo.REASON_EXIT_SELF -> ctx.tr(R.string.ev_reason_self)
+                ApplicationExitInfo.REASON_OTHER -> ctx.tr(R.string.ev_reason_other)
+                else -> ctx.tr(R.string.ev_reason_code, recent.reason)
             }
-            return "$pkg : $reason ${Fmt.ago(recent.timestamp)}"
+            val fatal = when (recent.reason) {
+                ApplicationExitInfo.REASON_CRASH,
+                ApplicationExitInfo.REASON_CRASH_NATIVE,
+                ApplicationExitInfo.REASON_ANR,
+                ApplicationExitInfo.REASON_LOW_MEMORY,
+                ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> true
+                else -> false
+            }
+            val text = ctx.tr(
+                R.string.ev_exit,
+                pkg,
+                reason,
+                Fmt.ago(ctx, recent.timestamp)
+            )
+            return fatal to text
         }
         return null
     }
@@ -191,7 +214,7 @@ class CamapsCtl(private val ctx: Context) {
 
     /** Ramène CamAPS FX au premier plan. Ne l'arrête jamais (aucun force-stop). */
     fun launch(pkg: String): String {
-        if (pkg.isEmpty()) return "échec"
+        if (pkg.isEmpty()) return FAILED
         val intent = try {
             pm.getLaunchIntentForPackage(pkg)
         } catch (t: Throwable) {
@@ -205,23 +228,36 @@ class CamapsCtl(private val ctx: Context) {
             )
             try {
                 ctx.startActivity(intent)
-                Logbook.add("camaps", "relance par intent direct ($pkg)")
+                Logbook.add(
+                    ctx.tr(R.string.cat_camaps),
+                    ctx.tr(R.string.log_camaps_intent_ok, pkg)
+                )
                 return "intent"
             } catch (t: Throwable) {
                 Logbook.add(
-                    "camaps",
-                    "intent refusé : ${t.javaClass.simpleName} ${t.message ?: ""}"
+                    ctx.tr(R.string.cat_camaps),
+                    ctx.tr(
+                        R.string.log_camaps_intent_refused,
+                        t.javaClass.simpleName,
+                        t.message ?: ""
+                    )
                 )
             }
         } else {
-            Logbook.add("camaps", "aucune activité de lancement pour $pkg")
+            Logbook.add(
+                ctx.tr(R.string.cat_camaps),
+                ctx.tr(R.string.log_camaps_no_launch_activity, pkg)
+            )
         }
         // Repli privilégié : monkey sait démarrer l'activité de lancement.
         val r = Shell.runPrivileged("monkey -p $pkg -c android.intent.category.LAUNCHER 1")
         if (r.ok) {
-            Logbook.add("camaps", "relance par monkey (${r.how})")
+            Logbook.add(
+                ctx.tr(R.string.cat_camaps),
+                ctx.tr(R.string.log_camaps_monkey, r.how)
+            )
             return "monkey/${r.how}"
         }
-        return "échec"
+        return FAILED
     }
 }

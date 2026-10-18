@@ -41,12 +41,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.najah.camapsguardian.R
 import com.najah.camapsguardian.core.Control
 import com.najah.camapsguardian.core.Fmt
 import com.najah.camapsguardian.core.Logbook
@@ -55,6 +57,7 @@ import com.najah.camapsguardian.core.Presence
 import com.najah.camapsguardian.core.Shell
 import com.najah.camapsguardian.core.Snap
 import com.najah.camapsguardian.core.Status
+import com.najah.camapsguardian.core.tr
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -102,7 +105,7 @@ fun GuardianScreen() {
 
             PermissionPanel(ctx, snap)
 
-            Panel("Actions") {
+            Panel(stringResource(R.string.ui_actions)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
@@ -118,18 +121,26 @@ fun GuardianScreen() {
                         enabled = !busy,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(if (busy) "Contrôle…" else "Vérifier maintenant", fontSize = 12.sp)
+                        Text(
+                            stringResource(
+                                if (busy) R.string.ui_checking else R.string.ui_check_now
+                            ),
+                            fontSize = 12.sp
+                        )
                     }
                     OutlinedButton(
                         onClick = {
                             scope.launch {
-                                message = "CamAPS : " + Control.relaunchCamaps(ctx)
+                                message = ctx.tr(
+                                    R.string.ui_camaps_prefix,
+                                    Control.relaunchCamaps(ctx)
+                                )
                                 Status.refresh(ctx)
                             }
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Relancer CamAPS", fontSize = 12.sp)
+                        Text(stringResource(R.string.ui_restart_camaps), fontSize = 12.sp)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -138,25 +149,25 @@ fun GuardianScreen() {
                             scope.launch {
                                 val found = Control.detectCamaps(ctx)
                                 message = if (found.isEmpty()) {
-                                    "Aucun paquet CamAPS trouvé"
+                                    ctx.tr(R.string.ui_no_package_found)
                                 } else {
-                                    "Trouvé : " + found.joinToString(", ")
+                                    ctx.tr(R.string.ui_found, found.joinToString(", "))
                                 }
                                 Status.refresh(ctx)
                             }
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Détecter CamAPS FX", fontSize = 12.sp)
+                        Text(stringResource(R.string.ui_detect_camaps), fontSize = 12.sp)
                     }
                     TextButton(
                         onClick = {
                             Logbook.clear()
-                            message = "Journal effacé"
+                            message = ctx.tr(R.string.ui_log_cleared)
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Effacer le journal", fontSize = 12.sp)
+                        Text(stringResource(R.string.ui_clear_log), fontSize = 12.sp)
                     }
                 }
                 if (message.isNotBlank()) {
@@ -177,13 +188,13 @@ fun GuardianScreen() {
 private fun Header(snap: Snap, onToggle: (Boolean) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            "CamAPS Guardian",
+            stringResource(R.string.app_name),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            "Bluetooth + CamAPS FX · ronde automatique",
+            stringResource(R.string.app_sub),
             fontSize = 12.sp,
             color = Dim
         )
@@ -197,17 +208,22 @@ private fun Header(snap: Snap, onToggle: (Boolean) -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (snap.enabled) "Surveillance active" else "Surveillance arrêtée",
+                    stringResource(
+                        if (snap.enabled) R.string.ui_monitoring_on else R.string.ui_monitoring_off
+                    ),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (snap.enabled) Ok else Warn
                 )
                 Text(
-                    if (snap.enabled) {
-                        if (snap.running) "Service en cours · auto-relancé" else "Service relancé automatiquement"
-                    } else {
-                        "Aucune ronde programmée"
-                    },
+                    stringResource(
+                        if (snap.enabled) {
+                            if (snap.running) R.string.ui_service_running
+                            else R.string.ui_service_restarted
+                        } else {
+                            R.string.ui_no_round_scheduled
+                        }
+                    ),
                     fontSize = 11.sp,
                     color = Dim
                 )
@@ -221,34 +237,43 @@ private fun Header(snap: Snap, onToggle: (Boolean) -> Unit) {
 
 @Composable
 private fun StatusPanel(snap: Snap) {
-    Panel("État") {
+    val ctx = LocalContext.current
+    Panel(stringResource(R.string.ui_state)) {
         KeyLine(
-            label = "Bluetooth",
-            value = when {
-                !snap.btHardware -> "Indisponible"
-                snap.btOn -> "Activé"
-                else -> "Éteint"
-            },
+            label = stringResource(R.string.ui_bluetooth),
+            value = stringResource(
+                when {
+                    !snap.btHardware -> R.string.ui_bt_unavailable
+                    snap.btOn -> R.string.ui_bt_on
+                    else -> R.string.ui_bt_off
+                }
+            ),
             color = when {
                 !snap.btHardware -> Bad
                 snap.btOn -> Ok
                 else -> Bad
             },
             note = if (snap.btOn) {
-                "${snap.btDevices ?: "?"} connecté(s) · ${snap.btBonded ?: "?"} appairé(s)"
+                stringResource(
+                    R.string.ui_bt_counts,
+                    snap.btDevices ?: "?",
+                    snap.btBonded ?: "?"
+                )
             } else {
-                "rallumage automatique"
+                stringResource(R.string.ui_bt_auto_note)
             }
         )
         KeyLine(
-            label = "CamAPS FX",
-            value = when (snap.presence) {
-                Presence.ALIVE -> "Actif"
-                Presence.NOT_ALIVE -> "Muet"
-                Presence.UNKNOWN -> "Indéterminé"
-                Presence.MISSING -> "Introuvable"
-                Presence.NO_TARGET -> "Non configuré"
-            },
+            label = stringResource(R.string.ui_camaps_fx),
+            value = stringResource(
+                when (snap.presence) {
+                    Presence.ALIVE -> R.string.ui_camaps_alive
+                    Presence.NOT_ALIVE -> R.string.ui_camaps_mute
+                    Presence.UNKNOWN -> R.string.ui_camaps_unknown
+                    Presence.MISSING -> R.string.ui_camaps_missing
+                    Presence.NO_TARGET -> R.string.ui_camaps_no_target
+                }
+            ),
             color = when (snap.presence) {
                 Presence.ALIVE -> Ok
                 Presence.NOT_ALIVE -> Bad
@@ -259,13 +284,19 @@ private fun StatusPanel(snap: Snap) {
             note = snap.presenceEvidence.take(110)
         )
         KeyLine(
-            label = "Ronde",
-            value = if (snap.enabled) "Active" else "Arrêtée",
+            label = stringResource(R.string.ui_round),
+            value = stringResource(
+                if (snap.enabled) R.string.ui_round_active else R.string.ui_round_stopped
+            ),
             color = if (snap.enabled) Ok else Warn,
-            note = "dernière ${Fmt.ago(snap.lastCheck)} · prochaine ${Fmt.time(snap.nextCheck)}"
+            note = stringResource(
+                R.string.ui_round_note,
+                Fmt.ago(ctx, snap.lastCheck),
+                Fmt.time(snap.nextCheck)
+            )
         )
         KeyLine(
-            label = "Batterie",
+            label = stringResource(R.string.ui_battery),
             value = if (snap.battery >= 0) "${snap.battery} %" else "?",
             color = when {
                 snap.battery < 0 -> Dim
@@ -273,13 +304,22 @@ private fun StatusPanel(snap: Snap) {
                 snap.battery <= 15 -> Bad
                 else -> Ok
             },
-            note = if (snap.charging) "en charge" else "sur batterie"
+            note = stringResource(
+                if (snap.charging) R.string.ui_charging else R.string.ui_on_battery
+            )
         )
         KeyLine(
-            label = "Veille",
-            value = if (snap.doze) "Doze" else "Normale",
+            label = stringResource(R.string.ui_sleep),
+            value = stringResource(
+                if (snap.doze) R.string.ui_doze else R.string.ui_normal
+            ),
             color = if (snap.doze) Warn else Ok,
-            note = "${snap.checks} rondes · ${snap.btFixes} BT · ${snap.relaunches} relances"
+            note = stringResource(
+                R.string.ui_sleep_note,
+                snap.checks,
+                snap.btFixes,
+                snap.relaunches
+            )
         )
         if (snap.lastSummary.isNotBlank()) {
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -299,20 +339,28 @@ private fun StatusPanel(snap: Snap) {
 @Composable
 private fun IntervalPanel(snap: Snap) {
     val ctx = LocalContext.current
-    Panel("Fréquence") {
-        Text("Ronde de contrôle", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+    Panel(stringResource(R.string.ui_frequency)) {
+        Text(
+            stringResource(R.string.ui_check_round),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Chips(P.INTERVALS, snap.checkMinutes) {
             Control.setInterval(ctx, it)
             Status.refresh(ctx)
         }
         Spacer(Modifier.height(4.dp))
-        Text("Rétablissement en UP (relance CamAPS / Bluetooth)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            stringResource(R.string.ui_recovery_interval),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Chips(P.INTERVALS, snap.recoverMinutes) {
             Control.setRecover(ctx, it)
             Status.refresh(ctx)
         }
         Text(
-            "La ronde tourne au rythme choisi ; les relances sont limitées à l'intervalle de rétablissement.",
+            stringResource(R.string.ui_frequency_note),
             fontSize = 10.sp,
             color = Dim,
             lineHeight = 13.sp
@@ -327,7 +375,9 @@ private fun Chips(options: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
             FilterChip(
                 selected = minutes == selected,
                 onClick = { onSelect(minutes) },
-                label = { Text("$minutes min", fontSize = 11.sp) }
+                label = {
+                    Text(stringResource(R.string.ui_minutes, minutes), fontSize = 11.sp)
+                }
             )
         }
     }
@@ -337,10 +387,10 @@ private fun Chips(options: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
 
 @Composable
 private fun RecoveryPanel(ctx: Context, snap: Snap) {
-    Panel("Rétablissement") {
+    Panel(stringResource(R.string.ui_recovery)) {
         ToggleLine(
-            title = "Rallumer le Bluetooth",
-            subtitle = "Direct, puis root/Shizuku, sinon notification d'action",
+            title = stringResource(R.string.ui_toggle_bt),
+            subtitle = stringResource(R.string.ui_toggle_bt_sub),
             checked = snap.btAuto,
             onChange = { value ->
                 Control.setFlag(ctx) { p -> p.copy(btAuto = value) }
@@ -348,8 +398,8 @@ private fun RecoveryPanel(ctx: Context, snap: Snap) {
             }
         )
         ToggleLine(
-            title = "Relancer CamAPS FX",
-            subtitle = "Après deux rondes muettes consécutives",
+            title = stringResource(R.string.ui_toggle_app),
+            subtitle = stringResource(R.string.ui_toggle_app_sub),
             checked = snap.appAuto,
             onChange = { value ->
                 Control.setFlag(ctx) { p -> p.copy(appAuto = value) }
@@ -357,8 +407,8 @@ private fun RecoveryPanel(ctx: Context, snap: Snap) {
             }
         )
         ToggleLine(
-            title = "Relancer si connexion Bluetooth perdue",
-            subtitle = "Ramène CamAPS au premier plan pour qu'il se reconnecte",
+            title = stringResource(R.string.ui_toggle_btloss),
+            subtitle = stringResource(R.string.ui_toggle_btloss_sub),
             checked = snap.relaunchOnBtLoss,
             onChange = { value ->
                 Control.setFlag(ctx) { p -> p.copy(relaunchOnBtLoss = value) }
@@ -366,8 +416,8 @@ private fun RecoveryPanel(ctx: Context, snap: Snap) {
             }
         )
         ToggleLine(
-            title = "Cycle Bluetooth agressif",
-            subtitle = "Coupe puis rallume le Bluetooth après 4 pertes",
+            title = stringResource(R.string.ui_toggle_cycle),
+            subtitle = stringResource(R.string.ui_toggle_cycle_sub),
             checked = snap.aggressiveCycle,
             onChange = { value ->
                 Control.setFlag(ctx) { p -> p.copy(aggressiveCycle = value) }
@@ -403,42 +453,45 @@ private fun ToggleLine(
 
 @Composable
 private fun PermissionPanel(ctx: Context, snap: Snap) {
-    Panel("Autorisations") {
+    Panel(stringResource(R.string.ui_permissions)) {
         PermLine(
-            title = "Batterie sans restriction",
+            title = stringResource(R.string.ui_perm_battery),
             ok = snap.ignoringBattery,
             onOpen = { openBattery(ctx) }
         )
         PermLine(
-            title = "Afficher par-dessus les autres applis",
+            title = stringResource(R.string.ui_perm_overlay),
             ok = snap.overlay,
             onOpen = { openOverlay(ctx) }
         )
         PermLine(
-            title = "Accès aux notifications (état de CamAPS)",
+            title = stringResource(R.string.ui_perm_notifications),
             ok = snap.notifAccess,
             onOpen = { openNotifAccess(ctx) }
         )
         PermLine(
-            title = "Accès aux stats d'usage (facultatif)",
+            title = stringResource(R.string.ui_perm_usage),
             ok = snap.usageAccess,
             onOpen = { openUsage(ctx) }
         )
         PermLine(
-            title = "Alarmes exactes",
+            title = stringResource(R.string.ui_perm_alarms),
             ok = snap.exactAlarms,
             onOpen = { openExactAlarms(ctx) }
         )
         PermLine(
-            title = "Permission Bluetooth",
+            title = stringResource(R.string.ui_perm_bt),
             ok = snap.btPerm,
             onOpen = { openAppDetails(ctx) }
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (snap.root || snap.shizuku) "Privilèges : ${if (snap.root) "root" else "Shizuku"}"
-                else "Privilèges : aucun (facultatif)",
+                stringResource(
+                    if (snap.root) R.string.ui_privileges_root
+                    else if (snap.shizuku) R.string.ui_privileges_shizuku
+                    else R.string.ui_privileges_none
+                ),
                 Modifier.weight(1f),
                 fontSize = 12.sp,
                 color = if (snap.root || snap.shizuku) Ok else Dim
@@ -447,13 +500,11 @@ private fun PermissionPanel(ctx: Context, snap: Snap) {
                 TextButton(onClick = {
                     Shell.requestShizukuPermission()
                     Status.refresh(ctx)
-                }) { Text("Shizuku", fontSize = 11.sp) }
+                }) { Text(stringResource(R.string.ui_shizuku), fontSize = 11.sp) }
             }
         }
         Text(
-            "Sans privilège, Android 13+ interdit de rallumer le Bluetooth par programme : " +
-                "l'application affiche alors une alerte plein écran à toucher. " +
-                "Avec root ou Shizuku, le rallumage est totalement automatique.",
+            stringResource(R.string.ui_privileges_note),
             fontSize = 10.sp,
             color = Dim,
             lineHeight = 13.sp
@@ -473,9 +524,11 @@ private fun PermLine(title: String, ok: Boolean, onOpen: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurface
         )
         if (ok) {
-            Text("OK", fontSize = 11.sp, color = Ok)
+            Text(stringResource(R.string.ui_ok), fontSize = 11.sp, color = Ok)
         } else {
-            TextButton(onClick = onOpen) { Text("Ouvrir", fontSize = 11.sp) }
+            TextButton(onClick = onOpen) {
+                Text(stringResource(R.string.ui_open), fontSize = 11.sp)
+            }
         }
     }
 }
@@ -484,9 +537,9 @@ private fun PermLine(title: String, ok: Boolean, onOpen: () -> Unit) {
 
 @Composable
 private fun LogPanel(logs: List<String>) {
-    Panel("Journal") {
+    Panel(stringResource(R.string.ui_log)) {
         if (logs.isEmpty()) {
-            Text("Rien pour l'instant.", fontSize = 11.sp, color = Dim)
+            Text(stringResource(R.string.ui_log_empty), fontSize = 11.sp, color = Dim)
         } else {
             Text(
                 logs.takeLast(40).joinToString("\n"),
@@ -502,8 +555,7 @@ private fun LogPanel(logs: List<String>) {
 @Composable
 private fun Footnote() {
     Text(
-        "Cet outil complète CamAPS FX, il ne le remplace pas. Les alarmes de CamAPS FX " +
-            "(perte de connexion, glycémie) restent la référence. Ne désinstallez jamais CamAPS FX.",
+        stringResource(R.string.ui_footnote),
         fontSize = 10.sp,
         color = Dim,
         lineHeight = 14.sp,

@@ -2,6 +2,7 @@ package com.najah.camapsguardian.core
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.najah.camapsguardian.R
 import java.util.Collections
 
 /**
@@ -37,13 +38,13 @@ class PresenceListener : NotificationListenerService() {
         connected = true
         instance = this
         refreshQuietly()
-        Logbook.add("notif", "accès aux notifications accordé")
+        Logbook.add(tr(R.string.cat_notif), tr(R.string.log_notif_granted))
     }
 
     override fun onListenerDisconnected() {
         connected = false
         synchronized(active) { active.clear() }
-        Logbook.add("notif", "accès aux notifications perdu")
+        Logbook.add(tr(R.string.cat_notif), tr(R.string.log_notif_lost))
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.content.ContextCompat
+import com.najah.camapsguardian.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,7 +42,7 @@ class WatchdogService : Service() {
         var running: Boolean = false
             private set
 
-        fun start(ctx: Context, trigger: String = "service") {
+        fun start(ctx: Context, trigger: String = ctx.tr(R.string.log_trigger_service)) {
             val i = Intent(ctx, WatchdogService::class.java)
                 .setAction(ACTION_START)
                 .putExtra(EXTRA_TRIGGER, trigger)
@@ -49,8 +50,8 @@ class WatchdogService : Service() {
                 ContextCompat.startForegroundService(ctx, i)
             } catch (t: Throwable) {
                 Logbook.add(
-                    "service",
-                    "démarrage refusé (${t.javaClass.simpleName}) → nouvelle tentative dans 1 min"
+                    ctx.tr(R.string.cat_service),
+                    ctx.tr(R.string.log_start_refused, t.javaClass.simpleName)
                 )
                 runCatching { Alarms.schedule(ctx, 1) }
             }
@@ -73,30 +74,38 @@ class WatchdogService : Service() {
         Notifier.ensureChannels(this)
         startForeground(
             Notifier.ID_FOREGROUND,
-            Notifier.foreground(this, "Surveillance active", "Initialisation de la ronde…")
+            Notifier.foreground(
+                this,
+                tr(R.string.notif_foreground_title),
+                tr(R.string.notif_foreground_starting)
+            )
         )
         registerEvents()
         scope.launch { heartbeat() }
-        Logbook.add("service", "service démarré (${Sys.deviceLabel()})")
+        Logbook.add(
+            tr(R.string.cat_service),
+            tr(R.string.log_service_started, Sys.deviceLabel())
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            Logbook.add("service", "arrêt demandé par l'utilisateur")
+            Logbook.add(tr(R.string.cat_service), tr(R.string.log_service_stop_requested))
             shutdown()
             return START_NOT_STICKY
         }
 
         val p = Prefs.get(this).value
         if (!p.enabled) {
-            Logbook.add("service", "surveillance désactivée → arrêt du service")
+            Logbook.add(tr(R.string.cat_service), tr(R.string.log_service_disabled))
             shutdown()
             return START_NOT_STICKY
         }
 
         val trigger = intent?.getStringExtra(EXTRA_TRIGGER)
             ?: intent?.action
-            ?: "service"
+            ?: tr(R.string.log_trigger_service)
+
         tick(trigger)
         return START_STICKY
     }
@@ -105,7 +114,7 @@ class WatchdogService : Service() {
 
     private fun tick(trigger: String) {
         if (work?.isActive == true) {
-            Logbook.add("service", "ronde déjà en cours, demande ignorée")
+            Logbook.add(tr(R.string.cat_service), tr(R.string.log_round_busy))
             return
         }
         work = scope.launch {
@@ -116,11 +125,11 @@ class WatchdogService : Service() {
                 val p = Prefs.get(applicationContext).value
                 Alarms.schedule(applicationContext, p.checkMinutes)
                 refreshNotification(summary, p)
-                Logbook.add("service", "fin de ronde")
+                Logbook.add(tr(R.string.cat_service), tr(R.string.log_round_end))
             } catch (t: Throwable) {
                 Logbook.add(
-                    "service",
-                    "erreur de ronde : ${t.javaClass.simpleName} ${t.message ?: ""}"
+                    tr(R.string.cat_service),
+                    tr(R.string.log_round_error, t.javaClass.simpleName, t.message ?: "")
                 )
                 runCatching {
                     Alarms.schedule(applicationContext, Prefs.get(applicationContext).value.checkMinutes)
@@ -139,19 +148,25 @@ class WatchdogService : Service() {
             try {
                 val p = Prefs.get(applicationContext).value
                 if (!p.enabled) {
-                    Logbook.add("service", "surveillance désactivée (battement) → arrêt")
+                    Logbook.add(
+                        tr(R.string.cat_service),
+                        tr(R.string.log_heartbeat_disabled)
+                    )
                     shutdown()
                     return
                 }
                 if (p.nextCheckAt == 0L ||
                     p.nextCheckAt < System.currentTimeMillis() - 120_000L
                 ) {
-                    Logbook.add("service", "chaîne d'alarmes interrompue → réarmement")
+                    Logbook.add(tr(R.string.cat_service), tr(R.string.log_heartbeat_rearm))
                     Alarms.schedule(applicationContext, p.checkMinutes)
                 }
                 refreshNotification(p.lastSummary, p)
             } catch (t: Throwable) {
-                Logbook.add("service", "battement : ${t.message}")
+                Logbook.add(
+                    tr(R.string.cat_service),
+                    tr(R.string.log_heartbeat_error, t.message ?: "")
+                )
             }
         }
     }
@@ -159,15 +174,15 @@ class WatchdogService : Service() {
     private fun refreshNotification(summary: String, p: P) {
         val next = if (p.nextCheckAt > 0L) Fmt.time(p.nextCheckAt) else "—"
         val text = buildString {
-            append(summary.ifBlank { "En attente de la première ronde" })
-            append("\nProchaine ronde : ").append(next)
-            append(" · contrôle toutes les ").append(p.checkMinutes).append(" min")
+            append(summary.ifBlank { tr(R.string.notif_foreground_waiting) })
+            append('\n')
+            append(tr(R.string.notif_foreground_next, next, p.checkMinutes))
         }
         try {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.notify(
                 Notifier.ID_FOREGROUND,
-                Notifier.foreground(this, "Surveillance active", text)
+                Notifier.foreground(this, tr(R.string.notif_foreground_title), text)
             )
         } catch (t: Throwable) {
             // sans conséquence
@@ -184,8 +199,8 @@ class WatchdogService : Service() {
                 if (!p.enabled) return
                 // On limite la fréquence : pas de ronde à chaque déverrouillage.
                 if (System.currentTimeMillis() - p.lastCheckAt < 90_000L) return
-                Logbook.add("événement", i.action ?: "?")
-                tick("événement ${(i.action ?: "").substringAfterLast('.')}")
+                Logbook.add(tr(R.string.cat_event), i.action ?: "?")
+                tick(tr(R.string.log_event, (i.action ?: "").substringAfterLast('.')))
             }
         }
         val filter = IntentFilter().apply {
@@ -199,7 +214,10 @@ class WatchdogService : Service() {
             ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
             events = receiver
         } catch (t: Throwable) {
-            Logbook.add("service", "récepteur d'événements non posé : ${t.message}")
+            Logbook.add(
+                tr(R.string.cat_service),
+                tr(R.string.log_receiver_failed, t.message ?: "")
+            )
         }
     }
 
@@ -218,7 +236,7 @@ class WatchdogService : Service() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         val p = Prefs.get(this).value
         if (p.enabled) {
-            Logbook.add("service", "application retirée des récentes → relance programmée")
+            Logbook.add(tr(R.string.cat_service), tr(R.string.log_app_removed))
             runCatching { Alarms.schedule(this, 1) }
         }
         super.onTaskRemoved(rootIntent)
@@ -230,10 +248,7 @@ class WatchdogService : Service() {
         events = null
         val p = Prefs.get(this).value
         if (p.enabled) {
-            Logbook.add(
-                "service",
-                "service détruit alors que la surveillance est active → réveil dans 1 min"
-            )
+            Logbook.add(tr(R.string.cat_service), tr(R.string.log_service_destroyed))
             runCatching { Alarms.schedule(this, 1) }
         }
         runCatching { if (lock?.isHeld == true) lock?.release() }

@@ -1,6 +1,7 @@
 package com.najah.camapsguardian.core
 
 import android.content.Context
+import com.najah.camapsguardian.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,8 +62,11 @@ object Status {
             val cam = CamapsCtl(app)
             val battery = Sys.battery(app)
             val presence =
-                if (p.targetList.isEmpty()) PresenceInfo(Presence.NO_TARGET, "aucune cible")
-                else cam.evaluate()
+                if (p.targetList.isEmpty()) {
+                    PresenceInfo(Presence.NO_TARGET, app.tr(R.string.ev_no_target))
+                } else {
+                    cam.evaluate()
+                }
             _state.value = Snap(
                 ready = true,
                 enabled = p.enabled,

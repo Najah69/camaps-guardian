@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CamAPS Guardian — chaînes françaises.
+  L'application est bilingue : ce fichier est le français, res/values/strings.xml l'anglais
+  (langue par défaut). Les emplacements sont toujours %1$s, %2$s, … (jamais %d).
+-->
+<resources>
+
+    <string name="app_name">CamAPS Guardian</string>
+    <string name="app_sub">Bluetooth + CamAPS FX · ronde automatique</string>
+
+    <!-- ======================================================== notifications -->
+    <string name="ch_watch_name">Surveillance</string>
+    <string name="ch_watch_desc">État de la ronde de surveillance (silencieux)</string>
+    <string name="ch_alert_name">Alertes</string>
+    <string name="ch_alert_desc">Bluetooth perdu ou CamAPS FX arrêté — action nécessaire</string>
+
+    <string name="notif_foreground_title">Surveillance active</string>
+    <string name="notif_foreground_starting">Initialisation de la ronde…</string>
+    <string name="notif_foreground_waiting">En attente de la première ronde</string>
+    <string name="notif_foreground_next">Prochaine ronde : %1$s · contrôle toutes les %2$s min</string>
+
+    <string name="notif_bt_title">Bluetooth éteint — action requise</string>
+    <string name="notif_bt_action">Rallumer le Bluetooth</string>
+    <string name="notif_bt_detail">Le Bluetooth est éteint et Android refuse de le rallumer seul. Touchez pour l\'activer.</string>
+
+    <string name="notif_app_title">CamAPS FX arrêté — action requise</string>
+    <string name="notif_app_action">Relancer CamAPS FX</string>
+    <string name="notif_app_detail">CamAPS FX ne répond plus (%1$s). Touchez pour le ramener au premier plan.</string>
+
+    <string name="notif_low_battery_title">Batterie faible (%1$s %%)</string>
+    <string name="notif_low_battery_text">La surveillance continue, mais branchez le téléphone : la boucle CamAPS FX en dépend.</string>
+    <string name="notif_allow_title">Autorisez la surveillance</string>
+    <string name="notif_allow_text">Réglez la batterie sur « Sans restriction » pour CamAPS Guardian, sinon Android peut arrêter la ronde.</string>
+    <string name="notif_no_sensor_title">Aucun capteur connecté (%1$s rondes)</string>
+    <string name="notif_no_sensor_text">Vérifiez le capteur et le transmetteur : CamAPS Guardian ne peut pas rétablir la liaison à votre place.</string>
+    <string name="notif_failed">notification impossible : %1$s</string>
+
+    <!-- ================================================================ écran -->
+    <string name="ui_monitoring_on">Surveillance active</string>
+    <string name="ui_monitoring_off">Surveillance arrêtée</string>
+    <string name="ui_service_running">Service en cours · auto-relancé</string>
+    <string name="ui_service_restarted">Service relancé automatiquement</string>
+    <string name="ui_no_round_scheduled">Aucune ronde programmée</string>
+
+    <string name="ui_state">État</string>
+    <string name="ui_bluetooth">Bluetooth</string>
+    <string name="ui_bt_unavailable">Indisponible</string>
+    <string name="ui_bt_on">Activé</string>
+    <string name="ui_bt_off">Éteint</string>
+    <string name="ui_bt_counts">%1$s connecté(s) · %2$s appairé(s)</string>
+    <string name="ui_bt_auto_note">rallumage automatique</string>
+
+    <string name="ui_camaps_fx">CamAPS FX</string>
+    <string name="ui_camaps_alive">Actif</string>
+    <string name="ui_camaps_mute">Muet</string>
+    <string name="ui_camaps_unknown">Indéterminé</string>
+    <string name="ui_camaps_missing">Introuvable</string>
+    <string name="ui_camaps_no_target">Non configuré</string>
+
+    <string name="ui_round">Ronde</string>
+    <string name="ui_round_active">Active</string>
+    <string name="ui_round_stopped">Arrêtée</string>
+    <string name="ui_round_note">dernière %1$s · prochaine %2$s</string>
+
+    <string name="ui_battery">Batterie</string>
+    <string name="ui_charging">en charge</string>
+    <string name="ui_on_battery">sur batterie</string>
+
+    <string name="ui_sleep">Veille</string>
+    <string name="ui_doze">Doze</string>
+    <string name="ui_normal">Normale</string>
+    <string name="ui_sleep_note">%1$s rondes · %2$s BT · %3$s relances</string>
+
+    <string name="ui_frequency">Fréquence</string>
+    <string name="ui_check_round">Ronde de contrôle</string>
+    <string name="ui_recovery_interval">Rétablissement en UP (relance CamAPS / Bluetooth)</string>
+    <string name="ui_frequency_note">La ronde tourne au rythme choisi ; les relances sont limitées à l\'intervalle de rétablissement.</string>
+    <string name="ui_minutes">%1$s min</string>
+
+    <string name="ui_actions">Actions</string>
+    <string name="ui_check_now">Vérifier maintenant</string>
+    <string name="ui_checking">Contrôle…</string>
+    <string name="ui_restart_camaps">Relancer CamAPS</string>
+    <string name="ui_detect_camaps">Détecter CamAPS FX</string>
+    <string name="ui_clear_log">Effacer le journal</string>
+    <string name="ui_no_package_found">Aucun paquet CamAPS trouvé</string>
+    <string name="ui_found">Trouvé : %1$s</string>
+    <string name="ui_log_cleared">Journal effacé</string>
+    <string name="ui_camaps_prefix">CamAPS : %1$s</string>
+
+    <string name="ui_recovery">Rétablissement</string>
+    <string name="ui_toggle_bt">Rallumer le Bluetooth</string>
+    <string name="ui_toggle_bt_sub">Direct, puis root/Shizuku, sinon notification d\'action</string>
+    <string name="ui_toggle_app">Relancer CamAPS FX</string>
+    <string name="ui_toggle_app_sub">Après deux rondes muettes consécutives</string>
+    <string name="ui_toggle_btloss">Relancer si connexion Bluetooth perdue</string>
+    <string name="ui_toggle_btloss_sub">Ramène CamAPS au premier plan pour qu\'il se reconnecte</string>
+    <string name="ui_toggle_cycle">Cycle Bluetooth agressif</string>
+    <string name="ui_toggle_cycle_sub">Coupe puis rallume le Bluetooth après 4 pertes</string>
+
+    <string name="ui_permissions">Autorisations</string>
+    <string name="ui_perm_battery">Batterie sans restriction</string>
+    <string name="ui_perm_overlay">Afficher par-dessus les autres applis</string>
+    <string name="ui_perm_notifications">Accès aux notifications (état de CamAPS)</string>
+    <string name="ui_perm_usage">Accès aux stats d\'usage (facultatif)</string>
+    <string name="ui_perm_alarms">Alarmes exactes</string>
+    <string name="ui_perm_bt">Permission Bluetooth</string>
+    <string name="ui_privileges_root">Privilèges : root</string>
+    <string name="ui_privileges_shizuku">Privilèges : Shizuku</string>
+    <string name="ui_privileges_none">Privilèges : aucun (facultatif)</string>
+    <string name="ui_privileges_note">Sans privilège, Android 13+ interdit de rallumer le Bluetooth par programme : l\'application affiche alors une alerte plein écran à toucher. Avec root ou Shizuku, le rallumage est totalement automatique.</string>
+    <string name="ui_shizuku">Shizuku</string>
+    <string name="ui_ok">OK</string>
+    <string name="ui_open">Ouvrir</string>
+
+    <string name="ui_log">Journal</string>
+    <string name="ui_log_empty">Rien pour l\'instant.</string>
+    <string name="ui_footnote">Cet outil complète CamAPS FX, il ne le remplace pas. Les alarmes de CamAPS FX (perte de connexion, glycémie) restent la référence. Ne désinstallez jamais CamAPS FX.</string>
+
+    <!-- ================================================================= temps -->
+    <string name="time_never">jamais</string>
+    <string name="time_ago_s">il y a %1$s s</string>
+    <string name="time_ago_min">il y a %1$s min</string>
+    <string name="time_ago_h">il y a %1$s h %2$s min</string>
+    <string name="time_ago_d">il y a %1$s j</string>
+    <string name="time_now">maintenant</string>
+    <string name="time_in_s">dans %1$s s</string>
+    <string name="time_in_min">dans %1$s min</string>
+    <string name="time_in_h">dans %1$s h %2$s min</string>
+    <string name="time_dash">—</string>
+
+    <!-- ==================================================== catégories du journal -->
+    <string name="cat_app">app</string>
+    <string name="cat_service">service</string>
+    <string name="cat_round">ronde</string>
+    <string name="cat_alarm">alarme</string>
+    <string name="cat_camaps">camaps</string>
+    <string name="cat_notif">notif</string>
+    <string name="cat_shell">shell</string>
+    <string name="cat_boot">boot</string>
+    <string name="cat_system">système</string>
+    <string name="cat_event">événement</string>
+    <string name="cat_action">action</string>
+    <string name="cat_control">contrôle</string>
+    <string name="cat_bt">bt</string>
+
+    <!-- ================================================================ journal -->
+    <string name="log_start_refused">démarrage refusé (%1$s) → nouvelle tentative dans 1 min</string>
+    <string name="log_service_started">service démarré (%1$s)</string>
+    <string name="log_service_stop_requested">arrêt demandé par l\'utilisateur</string>
+    <string name="log_service_disabled">surveillance désactivée → arrêt du service</string>
+    <string name="log_service_destroyed">service détruit alors que la surveillance est active → réveil dans 1 min</string>
+    <string name="log_app_removed">application retirée des récentes → relance programmée</string>
+    <string name="log_app_started">démarrage — %1$s</string>
+    <string name="log_already_active">surveillance déjà active (%1$s min)</string>
+    <string name="log_next_round">prochaine ronde %1$s (alarmClock, %2$s min)</string>
+    <string name="log_alarm_clock_refused">setAlarmClock refusé (%1$s) → setExactAndAllowWhileIdle</string>
+    <string name="log_alarm_none">aucune alarme posée : %1$s</string>
+    <string name="log_alarm_cancelled">alarmes annulées</string>
+    <string name="log_job_unavailable">JobScheduler indisponible : %1$s</string>
+    <string name="log_round_busy">ronde déjà en cours, demande ignorée</string>
+    <string name="log_round_end">fin de ronde</string>
+    <string name="log_round_error">erreur de ronde : %1$s %2$s</string>
+    <string name="log_heartbeat_disabled">surveillance désactivée (battement) → arrêt</string>
+    <string name="log_heartbeat_rearm">chaîne d\'alarmes interrompue → réarmement</string>
+    <string name="log_heartbeat_error">battement : %1$s</string>
+    <string name="log_receiver_failed">récepteur d\'événements non posé : %1$s</string>
+    <string name="log_wake">réveil (%1$s)</string>
+    <string name="log_boot">%1$s — surveillance %2$s</string>
+    <string name="log_time_changed">heure modifiée → réarmement</string>
+    <string name="log_event">événement %1$s</string>
+    <string name="log_trigger_manual">manuel</string>
+    <string name="log_trigger_alarm">alarme</string>
+    <string name="log_trigger_activation">activation</string>
+    <string name="log_trigger_start">démarrage</string>
+    <string name="log_trigger_service">service</string>
+
+    <string name="log_round_disabled">Surveillance désactivée</string>
+    <string name="log_round_recent">Ronde récente (%1$s s)</string>
+    <string name="log_round_check">contrôle — %1$s</string>
+    <string name="log_target_fixed">cible corrigée : %1$s</string>
+
+    <string name="log_no_bt_hardware">pas de Bluetooth sur cet appareil</string>
+    <string name="log_bt_on">Bluetooth rallumé</string>
+    <string name="log_bt_needs_user">Bluetooth éteint : accord utilisateur requis</string>
+    <string name="log_bt_unavailable">Bluetooth indisponible</string>
+    <string name="log_bt_off_fix_disabled">Bluetooth éteint (correctif désactivé)</string>
+
+    <string name="log_camaps_mute">CamAPS muet (%1$s×) : %2$s</string>
+    <string name="log_camaps_relaunch_failed">relance CamAPS impossible</string>
+    <string name="log_camaps_relaunched">CamAPS relancé (%1$s)</string>
+    <string name="log_camaps_relaunch_deferred">relance CamAPS différée (intervalle)</string>
+    <string name="log_camaps_alive_again">de nouveau vivant</string>
+    <string name="log_camaps_unknown">état CamAPS inconnu : %1$s</string>
+    <string name="log_camaps_missing">CamAPS FX introuvable (nom de paquet ?)</string>
+    <string name="log_no_target">aucune cible configurée</string>
+
+    <string name="log_bt_no_device">aucun appareil Bluetooth connecté (%1$s×, %2$s appairé(s))</string>
+    <string name="log_camaps_live_no_relaunch">CamAPS vivant : pas de relance pour la perte Bluetooth</string>
+    <string name="log_camaps_relaunched_bt">CamAPS relancé (reconnexion Bluetooth)</string>
+    <string name="log_bt_cycle">cycle Bluetooth</string>
+
+    <string name="log_battery_low">batterie faible %1$s %%</string>
+    <string name="log_notes">notes : %1$s</string>
+
+    <string name="log_bt_enable_result">BluetoothAdapter.enable() → %1$s</string>
+    <string name="log_bt_enable_refused">enable() refusé : %1$s %2$s</string>
+    <string name="log_bt_cmd_ok">« %1$s » via %2$s → %3$s</string>
+    <string name="log_bt_cmd_refused">« %1$s » via %2$s refusé (%3$s)</string>
+    <string name="log_bt_cycle_requested">cycle Bluetooth demandé</string>
+    <string name="log_bt_cycle_done">cycle terminé : %1$s</string>
+
+    <string name="log_camaps_intent_ok">relance par intent direct (%1$s)</string>
+    <string name="log_camaps_intent_refused">intent refusé : %1$s %2$s</string>
+    <string name="log_camaps_no_launch_activity">aucune activité de lancement pour %1$s</string>
+    <string name="log_camaps_monkey">relance par monkey (%1$s)</string>
+    <string name="log_camaps_detected">paquet(s) détecté(s) : %1$s</string>
+
+    <string name="log_no_root">pas de root</string>
+    <string name="log_root_ok">root disponible</string>
+    <string name="log_timeout">délai dépassé</string>
+    <string name="log_no_privilege">aucun privilège (ni root ni Shizuku)</string>
+    <string name="log_shizuku_error">erreur Shizuku</string>
+    <string name="cat_job">tâche</string>
+    <string name="log_job_tick">tâche périodique — surveillance %1$s</string>
+    <string name="log_trigger_job">tâche périodique</string>
+    <string name="log_shizuku_ok">Shizuku disponible</string>
+    <string name="log_shizuku_absent">Shizuku absent ou non autorisé</string>
+    <string name="log_shizuku_requested">autorisation Shizuku demandée</string>
+    <string name="log_shizuku_request_failed">demande Shizuku impossible : %1$s</string>
+    <string name="log_shizuku_null_process">processus Shizuku nul</string>
+
+    <string name="log_notif_granted">accès aux notifications accordé</string>
+    <string name="log_notif_lost">accès aux notifications perdu</string>
+
+    <string name="log_control_enabled">surveillance ACTIVÉE (contrôle %1$s min)</string>
+    <string name="log_control_disabled">surveillance DÉSACTIVÉE</string>
+    <string name="log_control_interval">intervalle de contrôle : %1$s min</string>
+    <string name="log_control_recover">intervalle de rétablissement : %1$s min</string>
+
+    <string name="log_action_bt_screen">écran d\'action : rallumage Bluetooth</string>
+    <string name="log_action_app_screen">écran d\'action : relance CamAPS FX</string>
+    <string name="log_action_bt_granted">activation Bluetooth %1$s par l\'utilisateur</string>
+    <string name="log_action_granted">accordée</string>
+    <string name="log_action_refused">refusée</string>
+    <string name="log_action_bt_dialog_failed">dialogue Bluetooth impossible : %1$s</string>
+    <string name="log_action_relaunch">relance CamAPS : %1$s</string>
+
+    <!-- ======================================= indices de présence (CamAPS) -->
+    <string name="ev_no_target">aucune cible configurée</string>
+    <string name="ev_not_installed">CamAPS FX introuvable sur ce téléphone</string>
+    <string name="ev_notification_active">notification active (%1$s)</string>
+    <string name="ev_no_notification">aucune notification active</string>
+    <string name="ev_last_notification">dernière notification %1$s</string>
+    <string name="ev_no_notif_access">accès aux notifications non accordé</string>
+    <string name="ev_last_foreground">dernier premier plan %1$s</string>
+    <string name="ev_never_foreground">jamais vu au premier plan</string>
+    <string name="ev_no_usage_access">accès aux stats d\'usage non accordé</string>
+    <string name="ev_reason_crash">plantage</string>
+    <string name="ev_reason_native_crash">plantage natif</string>
+    <string name="ev_reason_anr">application figée (ANR)</string>
+    <string name="ev_reason_low_memory">manque de mémoire</string>
+    <string name="ev_reason_resources">ressources excessives</string>
+    <string name="ev_reason_signalled">tuée par un signal</string>
+    <string name="ev_reason_user">arrêt demandé</string>
+    <string name="ev_reason_self">arrêt volontaire</string>
+    <string name="ev_reason_other">arrêt</string>
+    <string name="ev_reason_code">raison %1$s</string>
+    <string name="ev_exit">%1$s : %2$s %3$s</string>
+
+    <!-- ============================================================== résumés -->
+    <string name="sum_bt_on">BT actif</string>
+    <string name="sum_bt_off">BT éteint</string>
+    <string name="sum_connected">%1$s connecté(s)</string>
+    <string name="sum_camaps_alive">CamAPS actif</string>
+    <string name="sum_camaps_mute">CamAPS muet</string>
+    <string name="sum_camaps_unknown">CamAPS ?</string>
+    <string name="sum_camaps_missing">CamAPS absent</string>
+    <string name="sum_camaps_target">cible ?</string>
+
+    <!-- ============================================================== messages -->
+    <string name="toast_bt_permission_denied">Permission Bluetooth refusée</string>
+    <string name="toast_no_bluetooth">Pas de Bluetooth sur cet appareil</string>
+    <string name="toast_camaps_not_found">CamAPS FX introuvable</string>
+
+</resources>
