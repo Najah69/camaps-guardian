@@ -1,5 +1,7 @@
 # CamAPS Guardian
 
+🇫🇷 **Français** (cette page) · 🇬🇧 [**English**](#english)
+
 **Un gardien de coin de rue pour CamAPS FX.** Une petite application Android qui vérifie, à
 intervalle régulier, que le Bluetooth de votre téléphone est allumé et que CamAPS FX tourne
 toujours — et qui tente de rétablir ce qui ne l'est plus.
@@ -81,6 +83,10 @@ CamAPS Guardian est une application qui **reste éveillée** et qui, toutes les 
 
 Si quelque chose ne va pas, elle essaie de le remettre en route — et elle **écrit tout** dans un
 journal que vous pouvez lire.
+
+L'application est **bilingue** : elle s'affiche en français ou en anglais selon la langue du
+téléphone. Sur Android 13 et plus, vous pouvez aussi choisir sa langue pour elle seule, dans
+**Réglages ▸ Applications ▸ CamAPS Guardian ▸ Langue**.
 
 ## 2. À qui s'adresse ce projet
 
@@ -481,7 +487,7 @@ echo "sdk.dir=/chemin/vers/Android/Sdk" > local.properties   # ou définir ANDRO
 gradlew.bat :app:assembleRelease      # Windows
 ```
 
-L'APK est écrit dans `app/build/outputs/apk/release/app-release.apk` (environ 7,6 Mo).
+L'APK est écrit dans `app/build/outputs/apk/release/app-release.apk` (environ 7,7 Mo).
 
 ### Signature
 
@@ -514,6 +520,7 @@ app/src/main/java/com/najah/camapsguardian/
 ├── ActionActivity.kt        Écran d'alerte plein écran (Bluetooth, permissions)
 ├── core/
 │   ├── Prefs.kt             Réglages persistants + StateFlow
+│   ├── I18n.kt              Traduction (français / anglais)
 │   ├── Fmt.kt               Formatage des heures et des durées
 │   ├── Logbook.kt           Journal (600 lignes, rotation automatique)
 │   ├── Sys.kt               Batterie, Doze, autorisations spéciales
@@ -548,6 +555,8 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [x] **Redémarrage complet** : `BOOT_COMPLETED` → service démarré → CamAPS FX relancé → alarme reprogrammée
 - [x] Repli par alerte plein écran quand le Bluetooth ne peut pas être rallumé
 - [x] Absence de relance intempestive quand CamAPS FX est déjà vivant
+- [x] Affichage **français** puis **anglais** de l'interface, après bascule de la langue de
+      l'application : en-tête, état, fréquences, autorisations, actions, journal, note de bas de page
 
 **Non vérifié, et signalé comme tel** :
 
@@ -579,23 +588,573 @@ garantie d'aucune sorte.
 
 ---
 
-## English summary
+# English
 
-**CamAPS Guardian** is a small Android app for people with type 1 diabetes using **CamAPS FX**.
-Every 5, 10, 15 or 30 minutes it checks whether Bluetooth is on, whether a device is actually
-connected, and whether CamAPS FX is still running — then tries to restore what is broken
-(turn Bluetooth back on, bring CamAPS FX back to the foreground, re-arm its own wake-up chain).
+🇬🇧 **English** (this section) · 🇫🇷 [**Français**](#camaps-guardian)
 
-It is **not a medical device**: it does not dose insulin, does not read glucose, and does not
-replace CamAPS FX or its alarms — keep those enabled. It never force-stops or clears data from
-CamAPS FX. No internet permission, no telemetry, no account.
+**A street-corner keeper for CamAPS FX.** A small Android app that regularly checks whether your
+phone's Bluetooth is on and whether CamAPS FX is still running — and tries to restore whatever no
+longer is.
 
-Requires Android 8.0+. Works fully without root; root or Shizuku additionally allows silent
-Bluetooth re-enabling on Android 13+. Signed APK is published in Releases; build with
-`./gradlew :app:assembleRelease`. MIT licensed. Not affiliated with, endorsed by, or supported
-by CamDiab Ltd.
+**[⬇︎ Download the latest version](https://github.com/Najah69/camaps-guardian/releases/latest)**
+
+## 🛑 Read this first
+
+> **CamAPS Guardian is not a medical device.**
+>
+> It does not compute any dose, does not command the pump, does not read your glucose and **does not
+> replace CamAPS FX or its alarms**. It does one thing only: try to keep alive the link between your
+> phone, your sensor and the app.
+>
+> **Keep every CamAPS FX alarm enabled.** Those alarms — and only those — warn you about a lost
+> connection or a dangerous glucose level. CamAPS Guardian is an extra net, never the main net.
+>
+> This project is provided **as is**, with no warranty of any kind, under the MIT licence. It is not
+> edited, endorsed or supported by CamDiab Ltd. If you are not comfortable installing an app from
+> outside the Play Store, **get someone to help you**: a mistake on a phone that drives a
+> closed loop is not a trivial thing.
+
+## Contents
+
+**Part 1 — for people with type 1 diabetes using CamAPS FX**
+1. [In a nutshell](#1-in-a-nutshell)
+2. [Who this project is for](#2-who-this-project-is-for)
+3. [Why CamAPS FX can stop](#3-why-camaps-fx-can-stop)
+4. [What CamAPS Guardian does](#4-what-camaps-guardian-does)
+5. [What it does not do](#5-what-it-does-not-do)
+6. [What you need on your phone](#6-what-you-need-on-your-phone)
+7. [Installation, step by step](#7-installation-step-by-step)
+8. [The manufacturer settings everyone forgets](#8-the-manufacturer-settings-everyone-forgets)
+9. [How to know it is working](#9-how-to-know-it-is-working)
+10. [The settings, one by one](#10-the-settings-one-by-one)
+11. [Reading the log](#11-reading-the-log)
+12. [FAQ](#12-faq)
+13. [Privacy](#13-privacy)
+14. [Uninstalling](#14-uninstalling)
+
+**Part 2 — for developers**
+15. [Architecture overview](#15-architecture-overview)
+16. [The survival strategy](#16-the-survival-strategy)
+17. [Why `targetSdk 32`](#17-why-targetsdk-32)
+18. [Detecting CamAPS FX without root](#18-detecting-camaps-fx-without-root)
+19. [Controlling Bluetooth in layers](#19-controlling-bluetooth-in-layers)
+20. [Building](#20-building)
+21. [Code map](#21-code-map)
+22. [What is verified, what is not](#22-what-is-verified-what-is-not)
+23. [Contributing](#23-contributing)
+24. [License](#24-license)
 
 ---
 
-*CamAPS FX est une marque de CamDiab Ltd. Ce projet est indépendant : il n'est ni édité, ni
-validé, ni soutenu par CamDiab Ltd.*
+# Part 1 — for people with type 1 diabetes using CamAPS FX
+
+## 1. In a nutshell
+
+CamAPS FX needs two things to do its job: **to be running**, and **to talk to your sensor over
+Bluetooth**. Android, on the other hand, does everything it can to save battery: it puts apps to
+sleep, stops services, and sometimes Bluetooth drops off.
+
+CamAPS Guardian is an app that **stays awake** and that, every 5, 10, 15 or 30 minutes depending on
+your choice, goes and looks:
+
+- is Bluetooth on?
+- is a device actually connected?
+- is CamAPS FX still running?
+
+If something is wrong, it tries to put it back on its feet — and it **writes everything** into a log
+you can read.
+
+The app is **bilingual**: it displays in French or in English depending on the phone's language. On
+Android 13 and above you can also pick its language for the app alone, in
+**Settings ▸ Apps ▸ CamAPS Guardian ▸ Language**.
+
+## 2. Who this project is for
+
+- You have **type 1 diabetes** and you use **CamAPS FX** on an **Android** phone.
+- Your phone is the one carrying the closed loop: it stays near you, day and night.
+- You have already found CamAPS FX closed, or Bluetooth off, without knowing why or for how long.
+
+If you run CamAPS FX on an iPhone, this project is not for you: it is written for Android only.
+
+## 3. Why CamAPS FX can stop
+
+Three things happen, and none of them is your fault:
+
+**The app is killed.** Android closes background apps to free memory, or because a manufacturer
+decided to be particularly aggressive (Xiaomi, Huawei, Samsung, Oppo, MediaTek in general). CamAPS FX
+then disappears silently.
+
+**Bluetooth turns off.** A power saving tweak, a reboot, an update, and Bluetooth is gone. CamAPS FX
+can no longer reach the sensor.
+
+**The link drops.** Sensor and phone lose sight of each other. CamAPS FX tries to reconnect on its
+own — but if the app is in the background, Android may prevent it from doing so.
+
+CamAPS FX has its own alarms, and they work. CamAPS Guardian does not replace them: it adds a
+**regular and independent** check, one that does not depend on the watched app to run.
+
+## 4. What CamAPS Guardian does
+
+On every round, in this order:
+
+| Step | What is checked | What is attempted |
+|---|---|---|
+| 1 | Is Bluetooth on? | Direct re-enable, then through root or Shizuku, otherwise an alert to tap |
+| 2 | How many devices are connected? | If zero for several rounds: CamAPS brought back to the foreground; optionally a Bluetooth cycle (off then on again) |
+| 3 | Is CamAPS FX running? | If silent two rounds in a row: restart through its launch screen |
+| 4 | Battery and sleep | Nothing destructive: a reminder if the battery drops below 15 % |
+| 5 | Is the alarm chain still intact? | Re-arming, rewriting the ongoing notification |
+
+It keeps going **whatever happens**: it never stops on its own, not at 3 % battery, not in deep
+sleep, not after a phone reboot.
+
+## 5. What it does not do
+
+Saying what a tool does not do matters as much as the rest.
+
+- **It does not dose insulin.** It touches neither the pump nor CamAPS FX settings.
+- **It does not replace CamAPS FX alarms.** Keep them all enabled.
+- **It is not infallible.** No Android app can be truly unkillable without being installed as a
+  system app (root) or as a device owner. CamAPS Guardian does the most that is possible without
+  privileges, and the log honestly says what worked.
+- **Without root or Shizuku it cannot turn Bluetooth back on by itself** on Android 13 and above:
+  Android forbids that to ordinary apps. It then shows an alert screen you have to tap. That is a
+  limit of the system, not a flaw of the app.
+- **It does not always detect CamAPS FX.** If it has no notification access and CamAPS FX has not
+  come to the foreground recently, its state is “unknown” — and in that case it restarts nothing, out
+  of caution.
+- **It is not published on the Play Store**, and cannot be in this state (see
+  [§17](#17-why-targetsdk-32)). You install it by hand, knowingly.
+
+## 6. What you need on your phone
+
+- Android **8.0 or more recent**.
+- **CamAPS FX installed and working.**
+- **USB debugging** is not required: it is just more convenient for installing.
+- About **8 MB** of free space.
+
+Nothing else. No account, no internet connection, no server.
+
+## 7. Installation, step by step
+
+### 7.1 Get the app
+
+Download [`app-release.apk`](https://github.com/Najah69/camaps-guardian/releases/latest) from the
+**Releases** page of this repository, or build it yourself (see [§20](#20-building)).
+
+### 7.2 Allow installation from an unknown source
+
+Android blocks apps that do not come from the Play Store by default. That is normal protection; you
+open it for this installation only.
+
+1. Open the `app-release.apk` file from your file manager.
+2. Android offers “Open with” or shows a blocking message.
+3. Tap **Settings**, then allow your file manager (or your browser) to “install unknown apps”.
+4. Go back and tap **Install**.
+
+> You may see “App designed for an older version of Android”. That is normal and deliberate: see
+> [§17](#17-why-targetsdk-32). It does not prevent you from installing it, and does not affect how it
+> works.
+
+### 7.3 Grant the permissions
+
+Open **CamAPS Guardian**. The **PERMISSIONS** section of the screen lists what is missing. Tap each
+line to open the matching Android setting:
+
+| Permission | Why | Required? |
+|---|---|---|
+| **Notifications** | Show the ongoing monitoring and the alerts | Yes |
+| **Bluetooth** | Read the state and the connected devices | Yes |
+| **Unrestricted battery** | Stop Android from putting the round to sleep | **Yes, the most important one** |
+| **Display over other apps** | Bring CamAPS back to the foreground without you having to do it | Strongly advised |
+| **Notification access** | Know whether CamAPS FX is alive (its ongoing notification) | Strongly advised |
+| **Exact alarms** | Fire the round at the right time | Yes when offered |
+| **Usage access** | Helps date the last time CamAPS came to the foreground | Optional |
+
+Do not skip the **Unrestricted battery** line: without it, your phone will eventually put the round
+to sleep, and everything else becomes pointless.
+
+### 7.4 Turn monitoring on
+
+Go back to the main screen and flip the **Monitoring stopped** switch to the active position. The
+label becomes **Monitoring active**, and an ongoing notification appears in the status bar: that is
+the sign that the service is running.
+
+## 8. The manufacturer settings everyone forgets
+
+This is the part almost everybody misses, and it is the part that decides whether the app will
+survive the night.
+
+Every manufacturer has its own layer of power saving, **on top of** Android's. Here are the names to
+look for in your phone's settings:
+
+| Manufacturer | Turn on | Turn off |
+|---|---|---|
+| **Xiaomi / Redmi / POCO** | “Autostart” for CamAPS Guardian | “Battery saver” for the app |
+| **Huawei / Honor** | “Launch manually” / “Manage manually” | App optimisation |
+| **Samsung** | Remove from “Sleeping apps” | “Put the app to sleep” |
+| **Oppo / Realme / OnePlus** | “Autostart” | “Battery optimisation” |
+| **Vivo** | “Background start” | “High power saving” |
+| **MediaTek (including Hammer, Ulefone)** | “Autostart” | “Background sleep” |
+| **Stock Android (Pixel)** | Nothing special | Nothing special |
+
+The exact name varies from one model to another. Look in the settings for the words **autostart**,
+**auto-start**, **sleep** or **optimisation**.
+
+> **The test that matters:** reboot your phone, wait two minutes, then open CamAPS Guardian. If it
+> shows **Monitoring active** without you doing anything, your setup is good. If not, a manufacturer
+> setting is missing.
+
+## 9. How to know it is working
+
+1. Open CamAPS Guardian.
+2. Tap **Check now** (ACTIONS section).
+3. Read the summary line under the buttons: it should look like
+   `BT on · 2 connected · CamAPS active · 78 %`.
+
+If it shows `CamAPS silent`, read the [FAQ](#12-faq).
+
+![CamAPS Guardian main screen](docs/ecran-principal-en.png)
+
+Then let it do its job. One round every 10 minutes (the default) is enough to spot a problem without
+draining the battery.
+
+## 10. The settings, one by one
+
+### Frequency
+
+- **Check round**: `5 min`, `10 min`, `15 min`, `30 min`. That is how often the app looks.
+  **10 minutes** is a good compromise for a closed-loop phone. Go down to 5 minutes if you want to be
+  warned sooner; go up if the battery suffers.
+- **Recovery interval**: the same scale, but for *restarts*. Two consecutive rounds may detect a
+  problem; this limit avoids bringing CamAPS FX back to the foreground every two minutes.
+  **10 minutes** is a good setting.
+
+### Switches
+
+| Setting | Effect | Advice |
+|---|---|---|
+| **Turn Bluetooth back on** | Tries to turn Bluetooth back on when it is off | Leave it on |
+| **Restart CamAPS FX** | Brings CamAPS back to the foreground after two silent rounds | Leave it on |
+| **Restart when the Bluetooth link is lost** | Brings CamAPS back to the foreground when no device is connected — **only if it is silent or of unknown state** | Leave it on |
+| **Aggressive Bluetooth cycle** | Turns Bluetooth off then on again after 4 losses in a row | Only turn on if you often lose the link |
+
+### Buttons
+
+| Button | What it does |
+|---|---|
+| **Check now** | Runs a round immediately (without waiting for the alarm) |
+| **Restart CamAPS** | Brings CamAPS FX back to the foreground right away |
+| **Detect CamAPS FX** | Finds CamAPS FX's package name and saves it |
+| **Clear log** | Empties the log (useful before reporting a problem) |
+
+## 11. Reading the log
+
+The log is the most useful part of the app: it says **what happened, when, and why**. Every line
+starts with a time and a category.
+
+```
+18/10 10:19:38 [service] service started (Android 15 (API 35))
+18/10 10:19:38 [round] check — start
+18/10 10:19:38 [camaps] restart by direct intent (com.camdiab.fx_alert.mgdl)
+18/10 10:19:38 [round] notes: CamAPS silent (1×): no active notification
+18/10 10:19:38 [round] BT on · 0 connected · CamAPS silent · 44 % · CamAPS restarted
+18/10 10:19:38 [alarm] next round 10:29 (alarmClock, 10 min)
+```
+
+| Category | Meaning |
+|---|---|
+| `[app]` | The interface starts |
+| `[service]` | The monitoring service starts, finishes a round, re-arms itself |
+| `[round]` | The result of a round: what was seen, what was done |
+| `[alarm]` | The next round is scheduled (or the chain was repaired) |
+| `[camaps]` | CamAPS FX was restarted, or could not be |
+| `[notif]` | Notification access granted or lost |
+| `[shell]` | root / Shizuku: available or not |
+| `[boot]` | The phone rebooted, or the app was updated |
+| `[system]` | Time change, doze |
+| `[event]` | Charger plugged in, etc. |
+
+You can also retrieve this log from the app's `files/journal.txt` file, reachable through `adb` or
+through a backup.
+
+## 12. FAQ
+
+**“CamAPS FX not found”**
+The saved package name does not match. Tap **Detect CamAPS FX**: the app finds the right name and
+saves it. (On many phones it is `com.camdiab.fx_alert.mgdl`.) The app also corrects that list by
+itself on startup.
+
+**“CamAPS FX: Unknown”**
+It cannot tell whether CamAPS is running. Grant **notification access** (the most effective) and,
+failing that, **usage access**. As long as the state is unknown it restarts nothing: that is
+deliberate.
+
+**A “Bluetooth is off” alert appears**
+Android 13 and above forbids an ordinary app from turning Bluetooth back on. Tap the alert:
+Bluetooth comes back on. To make that automatic you need **root** or **Shizuku** — see
+[§19](#19-controlling-bluetooth-in-layers).
+
+**“0 connected” while the sensor works**
+The sensor is not connected *at that instant*. That happens during a reconnection. What matters is
+the trend: if the counter stays at zero for hours, the problem is the sensor or the transmitter, not
+the app. After six rounds it tells you so.
+
+**Monitoring stops after a reboot**
+A manufacturer setting blocks autostart. See
+[§8](#8-the-manufacturer-settings-everyone-forgets).
+
+**It uses battery**
+One round every 10 minutes costs very little. If you notice unusual consumption, go to 15 or 30
+minutes. An empty battery is a more serious problem than one round fewer.
+
+**Does it work on my phone?**
+See [§22](#22-what-is-verified-what-is-not): only one brand has actually been tested. The mechanisms
+used are standard, but every manufacturer layer has its surprises.
+
+**Can I install it on the phone that carries the closed loop?**
+Yes — that is even its intended use. But read [§5](#5-what-it-does-not-do) first, and keep the CamAPS
+FX alarms.
+
+## 13. Privacy
+
+- **No internet connection.** The app does not even ask for the network permission.
+- **No data sent anywhere.** No account, no telemetry, no advertising.
+- **Everything stays on the phone**: the settings in Android preferences, the log in a local file.
+- **No access to your glucose values.** The app reads neither CamAPS FX history nor sensor data: it
+  only checks that Bluetooth is on, that a device is connected, and that CamAPS FX has a notification
+  on screen.
+
+The code is public: you can check all of that yourself.
+
+## 14. Uninstalling
+
+1. First turn monitoring off (the **Monitoring active** switch). That cancels the alarms and the
+   scheduled job.
+2. Uninstall the app normally, from the Android settings.
+3. If you had granted notification access, it disappears with the app.
+
+**Never uninstall CamAPS FX** to “clean up”: it holds your loop's history and its configuration.
+CamAPS Guardian never touches its data.
+
+---
+
+# Part 2 — for developers
+
+## 15. Architecture overview
+
+```
+Wake-ups
+  AlarmManager.setAlarmClock()  ──┐
+  Backup alarm (+3 min)         ──┼──►  WakeReceiver
+  Persistent JobScheduler 15 min ─┤          │
+  Internal heartbeat 60 s       ──┘          ▼
+                                     WatchdogService (foreground service)
+                                               │
+                       ┌───────────────────────┼───────────────────┐
+                       ▼                       ▼                   ▼
+                 BluetoothCtl             CamapsCtl             Sys
+                       │                       │                   │
+                       ▼                       ▼                   ▼
+                state, devices,           presence,            battery,
+                enable, cycle             relaunch             doze
+                       │                       │                   │
+                       └───────────────────────┴───────────────────┘
+                                               ▼
+                                       Watchdog.check()
+                                               ▼
+                              preferences + log + notification
+```
+
+The service does almost nothing itself: it triggers `Watchdog.check()`, which makes every decision
+and writes everything down. The UI reads a `Snap` (a snapshot of the state) exposed through a
+`StateFlow` — it never drives the monitoring.
+
+## 16. The survival strategy
+
+None of these mechanisms is enough on its own; it is their stacking that holds.
+
+| Mechanism | Role |
+|---|---|
+| `connectedDevice\|specialUse` foreground service | No duration limit (unlike `dataSync` on Android 15), ongoing notification |
+| `START_STICKY` + `stopWithTask="false"` | Survives being swiped away from recents |
+| `AlarmManager.setAlarmClock()` | **Goes through Doze** without any special permission; it is the only alarm that does |
+| Backup alarm at +3 min | In case the first one is lost |
+| Persistent `JobScheduler` (15 min) | Survives a reboot, fills the gaps |
+| Internal 60 s heartbeat | Detects a broken alarm chain and re-arms it |
+| Re-arming in `onDestroy` / `onTaskRemoved` | Schedules a round one minute later |
+| `BOOT_COMPLETED`, `MY_PACKAGE_REPLACED`, `TIME_SET` | Re-arms after a reboot, an update, a time change |
+| `PARTIAL_WAKE_LOCK` during the round | The CPU does not fall asleep in the middle of the check |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Prevents the manufacturer's aggressive optimisation |
+
+The details of how the alarms are sized are in `core/Alarms.kt`: primary alarm (`setAlarmClock`),
+`setExactAndAllowWhileIdle` fallback, then `setAndAllowWhileIdle`, and finally a persistent
+`JobScheduler`. Every failure is logged — you always know which strategy worked.
+
+## 17. Why `targetSdk 32`
+
+`BluetoothAdapter.enable()` is deprecated and restricted: from Android 13 (API 33) on, an app that
+**targets** 33 or more can no longer enable Bluetooth programmatically. By targeting **32**, the call
+stays allowed and Android only shows a compatibility warning.
+
+Accepted consequences:
+
+- The app cannot be published on the Play Store (that is not the goal).
+- Android may display “App designed for an older version of Android”.
+- **Do not raise `targetSdk` without accepting to lose that possibility.**
+
+On Android 15, in practice, the refusal is frequent even when targeting 32: the fallbacks (root,
+Shizuku, alert) are not decorative, they are often the only paths that work.
+
+## 18. Detecting CamAPS FX without root
+
+Three independent signals, from the most reliable to the weakest:
+
+1. **CamAPS FX's ongoing notification** (`NotificationListenerService.getActiveNotifications()`). It
+   is the best indicator: a living app following a sensor publishes an “ongoing” notification.
+2. **The system's exit history** (`getHistoricalProcessExitReasons()`, API 30+): tells whether CamAPS
+   FX crashed, was killed for memory, or raised an ANR. The window is limited to **20 minutes**:
+   beyond that, an old exit means nothing anymore.
+3. **The last time it came to the foreground** (`UsageStatsManager.queryEvents()` +
+   `ACTIVITY_RESUMED`): only useful if usage access has been granted.
+
+If no signal is available, the state is **`UNKNOWN`** and no restart is attempted: better to do
+nothing than to bring to the foreground an app that may have been running perfectly well.
+
+The restart goes through the **launch intent** (`NEW_TASK | RESET_TASK_IF_NEEDED |
+REORDER_TO_FRONT`), with a `monkey -p <pkg> -c android.intent.category.LAUNCHER 1` fallback.
+**Never `force-stop`, never `pm clear`**: that would destroy the loop in order to “repair” it.
+
+## 19. Controlling Bluetooth in layers
+
+```
+1. BluetoothAdapter.enable()                  → direct, if the system allows it
+2. su -c "cmd bluetooth_manager enable"       → root
+3. su -c "svc bluetooth enable"               → root, another path
+4. Shizuku.newProcess(...)                    → delegated root, without system root
+5. ActionActivity (full screen)               → the user taps, it comes back on
+```
+
+Shizuku is called **by reflection** (`rikka.shizuku.Shizuku`): no dependency, no cross-compilation. If
+Shizuku is not installed, the call fails cleanly and we move on to the next step.
+
+The full-screen alert uses `USE_FULL_SCREEN_INTENT` and `SYSTEM_ALERT_WINDOW`, which also allows
+starting an activity from the background (`Background activity start ... allowed because
+SYSTEM_ALERT_WINDOW permission is granted`, visible in logcat).
+
+## 20. Building
+
+Prerequisites: **JDK 17** (or more recent to launch Gradle) and the **Android SDK** with
+`compileSdk 36`.
+
+```bash
+git clone https://github.com/Najah69/camaps-guardian.git
+cd camaps-guardian
+echo "sdk.dir=/path/to/Android/Sdk" > local.properties   # or set ANDROID_HOME
+
+./gradlew :app:assembleRelease        # Linux / macOS
+gradlew.bat :app:assembleRelease      # Windows
+```
+
+The APK is written to `app/build/outputs/apk/release/app-release.apk` (about 7.7 MB).
+
+### Signing
+
+The repository **contains no key**. Without `keystore.properties`, Gradle signs with the debug key —
+the APK installs, but it will not be able to replace a version already signed with another key. To
+sign with your own key:
+
+```bash
+keytool -genkeypair -v -keystore guardian.jks -keyalg RSA -keysize 4096 \
+        -validity 10000 -alias guardian
+```
+
+Then create `keystore.properties` at the root:
+
+```properties
+storeFile=guardian.jks
+storePassword=...
+keyAlias=guardian
+keyPassword=...
+```
+
+`guardian.jks` and `keystore.properties` are in `.gitignore`: **never publish them**. A lost or
+leaked signing key cannot be recovered.
+
+## 21. Code map
+
+```
+app/src/main/java/com/najah/camapsguardian/
+├── GuardianApp.kt           Startup (channels, preferences)
+├── ActionActivity.kt        Full-screen alert screen (Bluetooth, permissions)
+├── core/
+│   ├── Prefs.kt             Persisted settings + StateFlow
+│   ├── I18n.kt              Translation (French / English)
+│   ├── Fmt.kt               Time and duration formatting
+│   ├── Logbook.kt           Log (600 lines, automatic rotation)
+│   ├── Sys.kt               Battery, Doze, special permissions
+│   ├── Shell.kt             root / Shizuku (reflection, no dependency)
+│   ├── BluetoothCtl.kt      State, connected devices, re-enable, cycle
+│   ├── CamapsCtl.kt         CamAPS FX presence, exit history, restart
+│   ├── PresenceListener.kt  NotificationListenerService
+│   ├── Notifier.kt          Channels, ongoing notification, full-screen alerts
+│   ├── Alarms.kt            Alarm chain (alarmClock + backup + JobScheduler)
+│   ├── Watchdog.kt          The round: decisions and repairs
+│   ├── WatchdogService.kt   Foreground service, heartbeat
+│   ├── WakeJobService.kt    Persistent periodic job
+│   ├── Receivers.kt         Wake-up, boot, time change
+│   ├── Control.kt           High-level actions (enable, interval, check)
+│   └── Status.kt            State snapshot for the UI
+└── ui/                      MainActivity, Compose screen, theme
+```
+
+Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1, `minSdk 26`,
+`compileSdk 36`, `targetSdk 32`, `jvmToolchain(17)`.
+
+## 22. What is verified, what is not
+
+**Verified on a real device** — Hammer Iron 6 5G, Android 15 (API 35), without root or Shizuku:
+
+- [x] Foreground service active (`isForeground=true`, `types=0x40000010`)
+- [x] Exact `RTC_WAKEUP` alarms with `showIntent` (`setAlarmClock`, `exactAllowReason=permission`)
+- [x] Persistent `JobScheduler` job registered
+- [x] Manual round: detection of Bluetooth, of the connected devices and of CamAPS FX
+- [x] Detection of CamAPS FX through its ongoing notification
+- [x] Swipe from recents: the service survives and reschedules a round
+- [x] **Full reboot**: `BOOT_COMPLETED` → service started → CamAPS FX restarted → alarm rescheduled
+- [x] Full-screen alert fallback when Bluetooth cannot be turned back on
+- [x] No unwanted restart when CamAPS FX is already alive
+- [x] **French** then **English** display of the interface, after switching the app language:
+      header, state, frequencies, permissions, actions, log, footnote
+
+**Not verified, and reported as such**:
+
+- [ ] Other manufacturers (Xiaomi, Samsung, Huawei, Oppo, Pixel…) — standard mechanisms, but
+      different layers
+- [ ] Turning Bluetooth back on through root or Shizuku (neither access existed on the test phone)
+- [ ] Behaviour over several weeks (memory leak, battery drift)
+- [ ] Deep Doze mode over a whole night
+- [ ] Android 8 to 14 (only Android 15 was used)
+
+If you test on another device, feedback in the *Issues* has value — especially if it is negative.
+
+## 23. Contributing
+
+Feedback is welcome, in particular:
+
+- a test report on another manufacturer (model, Android version, what worked);
+- a log (`[round]`, `[alarm]`) showing a case where the monitoring did not resume;
+- a translation or wording fix, if a passage is not clear.
+
+Please **do not attach** screenshots containing your glucose values, your name, or health data: an
+excerpt of the CamAPS Guardian log is always enough.
+
+## 24. License
+
+MIT — see [LICENSE](LICENSE). Do whatever you want with it, including commercially, with no warranty
+of any kind.
+
+---
+
+*CamAPS FX is a trademark of CamDiab Ltd. This project is independent: it is neither edited, endorsed
+nor supported by CamDiab Ltd.*
