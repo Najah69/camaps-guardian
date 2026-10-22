@@ -662,6 +662,8 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [x] **Rapport PDF** généré pour les quatre périodes et relu page par page : chiffres conformes au
       journal (coupure de 6 h 43 retrouvée à la minute près), import du journal existant
       (199 bilans de ronde sur 199 reconnus)
+- [x] Rapport **en anglais** après bascule de la langue de l'application, et boutons **Ouvrir**
+      (choix de la liseuse PDF) et **Partager** (feuille de partage Android)
 
 **Non vérifié, et signalé comme tel** :
 
@@ -671,10 +673,7 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [ ] Comportement sur plusieurs semaines (fuite mémoire, dérive de la batterie)
 - [ ] Mode Doze profond sur une nuit complète
 - [ ] Android 8 à 14 (seul Android 15 a été utilisé)
-- [ ] Boutons **Ouvrir** et **Partager** du rapport (les PDF ont été relus sur ordinateur)
 - [ ] Rapport sur trois mois **réels** : l'historique de test ne couvre encore que quelques jours
-- [ ] Rapport PDF **en anglais** : les textes sont traduits, mais aucun rapport anglais n'a été
-      généré et relu
 
 Si vous testez sur un autre appareil, un retour dans les *Issues* a de la valeur — surtout s'il
 est négatif.
@@ -1335,7 +1334,9 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
       running
 - [x] **PDF report** created for all four periods and reviewed page by page: figures match the log
       (a 6 h 43 outage found to the minute), import of the existing log (199 round summaries out of
-      199 recognised), Open and Share buttons
+      199 recognised)
+- [x] Report **in English** after switching the app language, and the **Open** (PDF viewer
+      picker) and **Share** (Android share sheet) buttons
 
 **Not verified, and reported as such**:
 
@@ -1345,10 +1346,7 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 - [ ] Behaviour over several weeks (memory leak, battery drift)
 - [ ] Deep Doze mode over a whole night
 - [ ] Android 8 to 14 (only Android 15 was used)
-- [ ] The report's **Open** and **Share** buttons (the PDFs were reviewed on a computer)
 - [ ] A report over three **real** months: the test history only covers a few days so far
-- [ ] PDF report **in English**: the texts are translated, but no English report has been created
-      and reviewed yet
 
 If you test on another device, feedback in the *Issues* has value — especially if it is negative.
 
