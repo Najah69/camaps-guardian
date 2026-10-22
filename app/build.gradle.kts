@@ -12,13 +12,13 @@ android {
     defaultConfig {
         applicationId = "com.najah.camapsguardian"
         minSdk = 26
-        // ⚠ IMPORTANT : targetSdk 32 est volontaire.
-        // À partir de targetSdk 33, Android interdit aux applications d'activer
+        // âš  IMPORTANT : targetSdk 32 est volontaire.
+        // Ã€ partir de targetSdk 33, Android interdit aux applications d'activer
         // le Bluetooth par programme (BluetoothAdapter.enable() renvoie false).
         // En restant sous 33, le watchdog peut rallumer le Bluetooth tout seul.
         targetSdk = 32
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "1.3"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -59,8 +59,8 @@ android {
         compose = true
     }
 
-    // Déclare les deux langues (français, anglais) au système : Android 13+ propose alors
-    // le choix de la langue de l'application dans Réglages ▸ Applications ▸ CamAPS Guardian.
+    // DÃ©clare les deux langues (franÃ§ais, anglais) au systÃ¨me : Android 13+ propose alors
+    // le choix de la langue de l'application dans RÃ©glages â–¸ Applications â–¸ CamAPS Guardian.
     androidResources {
         generateLocaleConfig = true
     }

@@ -48,21 +48,22 @@ toujours — et qui tente de rétablir ce qui ne l'est plus.
 9. [Comment savoir que ça marche](#9-comment-savoir-que-ça-marche)
 10. [Les réglages, un par un](#10-les-réglages-un-par-un)
 11. [Lire le journal](#11-lire-le-journal)
-12. [Questions fréquentes](#12-questions-fréquentes)
-13. [Vie privée](#13-vie-privée)
-14. [Désinstallation](#14-désinstallation)
+12. [Le rapport PDF](#12-le-rapport-pdf)
+13. [Questions fréquentes](#13-questions-fréquentes)
+14. [Vie privée](#14-vie-privée)
+15. [Désinstallation](#15-désinstallation)
 
 **Partie 2 — pour les développeurs**
-15. [Architecture](#15-architecture)
-16. [La stratégie de survie](#16-la-stratégie-de-survie)
-17. [Pourquoi `targetSdk 32`](#17-pourquoi-targetsdk-32)
-18. [Détecter CamAPS FX sans root](#18-détecter-camaps-fx-sans-root)
-19. [Contrôler le Bluetooth en couches](#19-contrôler-le-bluetooth-en-couches)
-20. [Compiler](#20-compiler)
-21. [Carte du code](#21-carte-du-code)
-22. [Ce qui est vérifié, ce qui ne l'est pas](#22-ce-qui-est-vérifié-ce-qui-ne-lest-pas)
-23. [Contribuer](#23-contribuer)
-24. [Licence](#24-licence)
+16. [Architecture](#16-architecture)
+17. [La stratégie de survie](#17-la-stratégie-de-survie)
+18. [Pourquoi `targetSdk 32`](#18-pourquoi-targetsdk-32)
+19. [Détecter CamAPS FX sans root](#19-détecter-camaps-fx-sans-root)
+20. [Contrôler le Bluetooth en couches](#20-contrôler-le-bluetooth-en-couches)
+21. [Compiler](#21-compiler)
+22. [Carte du code](#22-carte-du-code)
+23. [Ce qui est vérifié, ce qui ne l'est pas](#23-ce-qui-est-vérifié-ce-qui-ne-lest-pas)
+24. [Contribuer](#24-contribuer)
+25. [Licence](#25-licence)
 
 ---
 
@@ -128,6 +129,10 @@ surveillée pour fonctionner.
 | 4 | Batterie et veille | Rien de destructeur : un rappel si la batterie descend sous 15 % |
 | 5 | La chaîne d'alarmes tient-elle ? | Réarmement, réécriture de la notification permanente |
 
+Chaque ronde est aussi notée dans un **historique** gardé 100 jours sur le téléphone : c'est
+lui qui permet de produire, à la demande, un [rapport PDF](#12-le-rapport-pdf) avec camembert et
+graphiques sur un jour, une semaine, un mois ou trois mois.
+
 Elle continue **quoi qu'il arrive** : elle ne s'arrête jamais d'elle-même, même à 3 % de
 batterie, même en veille prolongée, même après un redémarrage du téléphone.
 
@@ -148,7 +153,7 @@ Dire ce qu'un outil ne fait pas est aussi important que le reste.
   CamAPS FX n'est pas passé au premier plan récemment, son état est « indéterminé » — et dans
   ce cas il ne relance rien, par prudence.
 - **Il n'est pas publié sur le Play Store**, et ne peut pas l'être dans cet état (voir
-  [§17](#17-pourquoi-targetsdk-32)). Vous l'installez à la main, en connaissance de cause.
+  [§18](#18-pourquoi-targetsdk-32)). Vous l'installez à la main, en connaissance de cause.
 
 ## 6. Ce qu'il faut sur votre téléphone
 
@@ -164,7 +169,7 @@ Rien d'autre. Pas de compte, pas de connexion Internet, pas de serveur.
 ### 7.1 Récupérer l'application
 
 Téléchargez [`app-release.apk`](https://github.com/Najah69/camaps-guardian/releases/latest)
-depuis la page **Releases** de ce dépôt, ou compilez-la vous-même (voir [§20](#20-compiler)).
+depuis la page **Releases** de ce dépôt, ou compilez-la vous-même (voir [§21](#21-compiler)).
 
 ### 7.2 Autoriser l'installation depuis une source inconnue
 
@@ -178,7 +183,7 @@ protection normale ; vous l'ouvrez pour cette installation seulement.
 4. Revenez en arrière et touchez **Installer**.
 
 > Vous verrez peut-être « Application conçue pour une version plus ancienne d'Android ».
-> C'est normal et volontaire : voir [§17](#17-pourquoi-targetsdk-32). Cela ne vous empêche pas
+> C'est normal et volontaire : voir [§18](#18-pourquoi-targetsdk-32). Cela ne vous empêche pas
 > de l'installer, et cela n'affecte pas son fonctionnement.
 
 ### 7.3 Accorder les autorisations
@@ -237,7 +242,7 @@ Le nom exact varie d'un modèle à l'autre. Cherchez dans les réglages les mots
 3. Lisez la ligne de résumé sous les boutons : elle doit ressembler à
    `BT actif · 2 connecté(s) · CamAPS actif · 78 %`.
 
-Si elle affiche `CamAPS absent`, lisez [§12](#12-questions-fréquentes).
+Si elle affiche `CamAPS absent`, lisez [§13](#13-questions-fréquentes).
 
 ![Écran principal de CamAPS Guardian](docs/ecran-principal.png)
 
@@ -271,7 +276,9 @@ sans vider la batterie.
 | **Vérifier maintenant** | Lance une ronde immédiatement (sans attendre l'alarme) |
 | **Relancer CamAPS** | Ramène CamAPS FX au premier plan tout de suite |
 | **Détecter CamAPS FX** | Retrouve le nom de paquet de CamAPS FX et l'enregistre |
-| **Effacer le journal** | Vide le journal (utile avant de signaler un problème) |
+| **Effacer le journal** | Vide le journal (utile avant de signaler un problème) — l'historique des rapports n'est pas touché |
+| **Exporter le journal (Téléchargements)** | Copie le journal complet dans `Téléchargements/camaps-guardian-journal-AAAAMMJJ-HHMMSS.txt` |
+| **Générer le rapport PDF** | Dans le panneau **Rapport** : voir [§12](#12-le-rapport-pdf) |
 
 ## 11. Lire le journal
 
@@ -300,10 +307,71 @@ pourquoi**. Chaque ligne commence par une heure et une catégorie.
 | `[système]` | Changement d'heure, mise en veille |
 | `[événement]` | Branchement du chargeur, etc. |
 
-Vous pouvez aussi récupérer ce journal dans le fichier `files/journal.txt` de l'application,
-accessible par `adb` ou par une sauvegarde.
+L'écran n'en montre que les 40 dernières lignes. Pour lire le journal complet, touchez
+**Exporter le journal (Téléchargements)** : le fichier texte apparaît dans le dossier
+Téléchargements, d'où vous pouvez l'ouvrir, le partager ou le copier sur un ordinateur
+(`adb pull /sdcard/Download/camaps-guardian-journal-…txt`). C'est le seul moyen : l'application
+interdit les sauvegardes Android et `run-as` ne fonctionne pas sur une version signée.
 
-## 12. Questions fréquentes
+## 12. Le rapport PDF
+
+Le journal dit ce qui s'est passé ronde par ronde ; le **rapport** en fait la synthèse sur une
+période, avec des graphiques lisibles par n'importe qui — vous, un proche, votre diabétologue.
+
+**Comment l'obtenir.** Dans le panneau **Rapport**, choisissez la période puis touchez
+**Générer le rapport PDF** :
+
+| Choix | Période couverte | Graphique principal |
+|---|---|---|
+| **Jour** | les 24 dernières heures | heure par heure |
+| **Semaine** | les 7 derniers jours, aujourd’hui compris | jour par jour |
+| **Mois** | les 30 derniers jours | jour par jour |
+| **3 mois** | les 13 dernières semaines | semaine par semaine |
+
+Le fichier `camaps-guardian-rapport-<période>-AAAAMMJJ-HHMM.pdf` est enregistré dans
+**Téléchargements** ; les boutons **Ouvrir** et **Partager** apparaissent juste en dessous.
+
+**Ce qu'il contient (3 pages A4).**
+
+1. **Synthèse** — quatre chiffres clés (part du temps où la liaison était correcte, coupures de
+   30 minutes ou plus, plus longue coupure, part du temps réellement surveillé), un **camembert**
+   de la répartition du temps entre les états ci-dessous, et une **analyse rédigée** : comparaison
+   avec la période précédente de même durée, cause principale des coupures, heures où elles se
+   concentrent, interventions de Guardian, batterie.
+2. **Graphiques** — barres empilées par heure, jour ou semaine ; coupures selon l'heure de la
+   journée (pour repérer, par exemple, un problème qui revient chaque nuit) ; courbe de la batterie.
+3. **Détails** — tableau des interventions (rondes, Bluetooth rallumé, CamAPS relancé, cycles,
+   redémarrages du téléphone, temps sous 15 % de batterie), les 15 plus longues coupures avec leur
+   cause, et la méthode de calcul.
+
+**Les états, et leur couleur.**
+
+| État | Couleur | Ce que cela veut dire |
+|---|---|---|
+| Liaison correcte | vert | Bluetooth actif, au moins un appareil connecté, CamAPS FX actif |
+| Aucun appareil BT connecté | jaune | Bluetooth actif mais rien de connecté : le plus souvent le capteur ou le transmetteur (portée, fin de vie) |
+| CamAPS FX muet ou absent | orange | Aucune trace de vie de CamAPS FX pendant la ronde |
+| Bluetooth éteint | rouge | Le Bluetooth était coupé |
+| État incertain | gris | Une information manquait (autorisation absente, par exemple) |
+| Non surveillé | gris clair | Plus de nouvelles de Guardian : téléphone éteint, surveillance arrêtée, rondes retardées |
+
+Chaque état est supposé valable jusqu'à la ronde suivante, au plus deux rondes et demie (25 min
+pour une ronde toutes les 10 min), et jamais au-delà d'un redémarrage du téléphone.
+
+**À savoir.**
+
+- **Il faut du recul.** L'historique commence à l'installation de la version 1.3 (plus ce que le
+  journal contenait encore, soit un jour ou deux). Un rapport « 3 mois » demandé la première
+  semaine le signale en tête et ne porte que sur les jours disponibles.
+- **« Aucun appareil connecté » ne nomme pas le capteur.** Android dit combien d'appareils sont
+  connectés, pas lesquels : une montre ou des écouteurs connectés peuvent masquer la perte du
+  capteur. Seul CamAPS FX sait si *son* capteur répond.
+- **Ce n'est pas un document médical.** Il ne contient aucune glycémie, aucune dose : seulement
+  l'état de la liaison. Il complète les rapports de CamAPS FX, il ne les remplace pas.
+- **Le rapport est à vous.** Il n'est créé que si vous le demandez, reste dans Téléchargements
+  et ne part nulle part tant que vous ne le partagez pas. Il mentionne le modèle du téléphone.
+
+## 13. Questions fréquentes
 
 **« CamAPS FX introuvable »**
 Le nom de paquet enregistré ne correspond pas. Touchez **Détecter CamAPS FX** : l'application
@@ -318,7 +386,7 @@ relance rien : c'est volontaire.
 **Une alerte « Le Bluetooth est éteint » apparaît**
 Android 13 et plus interdit à une application ordinaire de rallumer le Bluetooth. Touchez
 l'alerte : le Bluetooth se rallume. Pour que ce soit automatique, il faut **root** ou
-**Shizuku** — voir [§19](#19-contrôler-le-bluetooth-en-couches).
+**Shizuku** — voir [§20](#20-contrôler-le-bluetooth-en-couches).
 
 **« 0 connecté(s) » alors que le capteur fonctionne**
 Le capteur n'est pas connecté *à cet instant*. Cela arrive pendant une reconnexion. Ce qui
@@ -333,7 +401,7 @@ Une ronde toutes les 10 minutes coûte très peu. Si vous constatez une consomma
 passez à 15 ou 30 minutes. Une batterie vide est un problème plus grave qu'une ronde en moins.
 
 **Est-ce que ça marche sur mon téléphone ?**
-Voir [§22](#22-ce-qui-est-vérifié-ce-qui-ne-lest-pas) : une seule marque a été testée
+Voir [§23](#23-ce-qui-est-vérifié-ce-qui-ne-lest-pas) : une seule marque a été testée
 réellement. Les mécanismes utilisés sont standard, mais chaque surcouche constructeur a ses
 surprises.
 
@@ -341,19 +409,23 @@ surprises.
 Oui — c'est même son usage prévu. Mais lisez [§5](#5-ce-quil-ne-fait-pas) d'abord, et gardez les
 alarmes de CamAPS FX.
 
-## 13. Vie privée
+## 14. Vie privée
 
 - **Aucune connexion Internet.** L'application ne demande même pas la permission réseau.
 - **Aucune donnée envoyée nulle part.** Pas de compte, pas de télémétrie, pas de publicité.
-- **Tout reste sur le téléphone** : les réglages dans les préférences Android, le journal dans un
-  fichier local.
+- **Tout reste sur le téléphone** : les réglages dans les préférences Android, le journal et
+  l'historique des rondes (100 jours) dans des fichiers privés de l'application.
+- **Les fichiers exportés sont à vous.** Un journal exporté ou un rapport PDF n'est créé que si
+  vous touchez le bouton correspondant. Il est alors placé dans Téléchargements, où d'autres
+  applications ayant accès à vos fichiers peuvent le lire : supprimez-le quand vous n'en avez
+  plus besoin.
 - **Aucun accès à vos glycémies.** L'application ne lit ni l'historique de CamAPS FX, ni les
   données du capteur : elle se contente de vérifier que le Bluetooth est allumé, qu'un appareil
   est connecté, et que CamAPS FX a une notification à l'écran.
 
 Le code est public : vous pouvez vérifier tout cela vous-même.
 
-## 14. Désinstallation
+## 15. Désinstallation
 
 1. Désactivez d'abord la surveillance (interrupteur **Surveillance active**). Cela annule les
    alarmes et la tâche planifiée.
@@ -367,7 +439,7 @@ boucle et sa configuration. CamAPS Guardian ne touche jamais à ses données.
 
 # Partie 2 — pour les développeurs
 
-## 15. Architecture
+## 16. Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -398,7 +470,7 @@ Le service ne fait presque rien lui-même : il déclenche `Watchdog.check()`, qu
 décisions et écrit tout. L'interface lit un `Snap` (photographie de l'état) exposé par un
 `StateFlow` — elle ne pilote jamais la surveillance.
 
-## 16. La stratégie de survie
+## 17. La stratégie de survie
 
 Aucun de ces mécanismes ne suffit seul ; c'est leur empilement qui tient.
 
@@ -420,7 +492,7 @@ Le détail du dimensionnement des alarmes est dans `core/Alarms.kt` : alarme pri
 `JobScheduler` persistant. Chaque échec est journalisé — on sait toujours quelle stratégie a
 fonctionné.
 
-## 17. Pourquoi `targetSdk 32`
+## 18. Pourquoi `targetSdk 32`
 
 `BluetoothAdapter.enable()` est déprécié et restreint : à partir d'Android 13 (API 33), une
 application qui **cible** 33 ou plus ne peut plus activer le Bluetooth par programme. En ciblant
@@ -435,7 +507,7 @@ Conséquences assumées :
 Sur Android 15, en pratique, le refus est fréquent même en ciblant 32 : les replis
 (root, Shizuku, alerte) ne sont pas décoratifs, ce sont souvent les seuls chemins qui marchent.
 
-## 18. Détecter CamAPS FX sans root
+## 19. Détecter CamAPS FX sans root
 
 Trois signaux indépendants, du plus fiable au plus faible :
 
@@ -455,7 +527,7 @@ La relance se fait par l'**intent de lancement** (`NEW_TASK | RESET_TASK_IF_NEED
 REORDER_TO_FRONT`), avec un repli `monkey -p <pkg> -c android.intent.category.LAUNCHER 1`.
 **Jamais de `force-stop`, jamais de `pm clear`** : ce serait détruire la boucle pour la « réparer ».
 
-## 19. Contrôler le Bluetooth en couches
+## 20. Contrôler le Bluetooth en couches
 
 ```
 1. BluetoothAdapter.enable()                  → direct, si le système l'autorise
@@ -473,7 +545,7 @@ L'alerte plein écran utilise `USE_FULL_SCREEN_INTENT` et `SYSTEM_ALERT_WINDOW`,
 aussi de démarrer une activité depuis l'arrière-plan (`Background activity start ... allowed
 because SYSTEM_ALERT_WINDOW permission is granted`, visible dans logcat).
 
-## 20. Compiler
+## 21. Compiler
 
 Prérequis : **JDK 17** (ou plus récent pour lancer Gradle) et le **SDK Android** avec
 `compileSdk 36`.
@@ -487,7 +559,7 @@ echo "sdk.dir=/chemin/vers/Android/Sdk" > local.properties   # ou définir ANDRO
 gradlew.bat :app:assembleRelease      # Windows
 ```
 
-L'APK est écrit dans `app/build/outputs/apk/release/app-release.apk` (environ 7,7 Mo).
+L'APK est écrit dans `app/build/outputs/apk/release/app-release.apk` (environ 8 Mo).
 
 ### Signature
 
@@ -512,7 +584,7 @@ keyPassword=...
 `guardian.jks` et `keystore.properties` sont dans le `.gitignore` : **ne les publiez jamais**.
 Une clé de signature perdue ou divulguée n'est pas récupérable.
 
-## 21. Carte du code
+## 22. Carte du code
 
 ```
 app/src/main/java/com/najah/camapsguardian/
@@ -535,14 +607,41 @@ app/src/main/java/com/najah/camapsguardian/
 │   ├── WakeJobService.kt    Tâche périodique persistante
 │   ├── Receivers.kt         Réveil, démarrage, changement d'heure
 │   ├── Control.kt           Actions de haut niveau (activer, intervalle, vérifier)
-│   └── Status.kt            Photographie de l'état pour l'interface
+│   ├── Status.kt            Photographie de l'état pour l'interface
+│   ├── History.kt           Historique structuré des rondes (100 jours) + import du journal
+│   ├── Report.kt            Analyse : états, coupures, cases horaires, comparaison
+│   ├── ReportPdf.kt         Rendu PDF par le Canvas d'Android (aucune bibliothèque)
+│   └── Downloads.kt         Écriture dans Téléchargements (MediaStore)
 └── ui/                      MainActivity, écran Compose, thème
 ```
+
+### Historique et rapport
+
+Le journal texte ne suffit pas pour des statistiques : il tourne à 150 Ko (un ou deux jours) et sa
+langue suit celle du téléphone. `History` garde donc à part, dans `files/history.csv`, une ligne
+par ronde et par événement :
+
+```
+R;1792656000000;1;1;ALIVE;44;0;          ronde : bt, appareils, présence, batterie, secteur, drapeaux
+R;1792656600000;1;0;NOT_ALIVE;43;0;L     drapeaux : B rallumé, U accord demandé, L relance, C cycle, M manuelle
+E;1792657000000;BOOT                     événement : BOOT, ON, OFF
+```
+
+Environ 1 Mo pour 90 jours de rondes toutes les 10 minutes ; les lignes de plus de 100 jours sont
+élaguées. À la première ouverture, `JournalImport` relit les bilans de ronde du journal existant
+(en français ou en anglais) pour que le premier rapport ne parte pas de zéro.
+
+`Report.analyze()` découpe la période en intervalles (chaque ronde vaut jusqu'à la suivante, au
+plus 2,5 rondes, coupée par un `BOOT`), les classe par état, les ventile dans les cases du
+graphique et par heure de la journée, et regroupe les intervalles problématiques consécutifs en
+coupures. `ReportPdf` dessine trois pages A4 avec `android.graphics.pdf.PdfDocument` : pas de
+dépendance, pas de réseau, et les couleurs d'état sont toujours accompagnées de leur libellé et
+de leur pourcentage.
 
 Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 `minSdk 26`, `compileSdk 36`, `targetSdk 32`, `jvmToolchain(17)`.
 
-## 22. Ce qui est vérifié, ce qui ne l'est pas
+## 23. Ce qui est vérifié, ce qui ne l'est pas
 
 **Vérifié sur un appareil réel** — Hammer Iron 6 5G, Android 15 (API 35), sans root ni Shizuku :
 
@@ -557,6 +656,12 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [x] Absence de relance intempestive quand CamAPS FX est déjà vivant
 - [x] Affichage **français** puis **anglais** de l'interface, après bascule de la langue de
       l'application : en-tête, état, fréquences, autorisations, actions, journal, note de bas de page
+- [x] **Export du journal** (1.2) dans Téléchargements, puis récupération par `adb pull`
+- [x] **Version 1.3** installée par-dessus la 1.2 (`adb install -r`) : données gardées, service de
+      premier plan toujours actif
+- [x] **Rapport PDF** généré pour les quatre périodes et relu page par page : chiffres conformes au
+      journal (coupure de 6 h 43 retrouvée à la minute près), import du journal existant
+      (199 bilans de ronde sur 199 reconnus)
 
 **Non vérifié, et signalé comme tel** :
 
@@ -566,14 +671,15 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [ ] Comportement sur plusieurs semaines (fuite mémoire, dérive de la batterie)
 - [ ] Mode Doze profond sur une nuit complète
 - [ ] Android 8 à 14 (seul Android 15 a été utilisé)
-- [ ] La version **1.1** elle-même n'a pas été réinstallée sur le téléphone (il a été déconnecté
-      pendant sa préparation) : elle ne diffère de la version testée que par le numéro de version et
-      la déclaration des langues, mais ce n'est pas la même signature de fichier
+- [ ] Boutons **Ouvrir** et **Partager** du rapport (les PDF ont été relus sur ordinateur)
+- [ ] Rapport sur trois mois **réels** : l'historique de test ne couvre encore que quelques jours
+- [ ] Rapport PDF **en anglais** : les textes sont traduits, mais aucun rapport anglais n'a été
+      généré et relu
 
 Si vous testez sur un autre appareil, un retour dans les *Issues* a de la valeur — surtout s'il
 est négatif.
 
-## 23. Contribuer
+## 24. Contribuer
 
 Les retours sont bienvenus, en particulier :
 
@@ -584,7 +690,7 @@ Les retours sont bienvenus, en particulier :
 Merci de **ne pas joindre** de capture contenant vos glycémies, votre nom, ou des données de
 santé : un extrait du journal de CamAPS Guardian suffit toujours.
 
-## 24. Licence
+## 25. Licence
 
 MIT — voir [LICENSE](LICENSE). Faites-en ce que vous voulez, y compris commercialement, sans
 garantie d'aucune sorte.
@@ -631,21 +737,22 @@ longer is.
 9. [How to know it is working](#9-how-to-know-it-is-working)
 10. [The settings, one by one](#10-the-settings-one-by-one)
 11. [Reading the log](#11-reading-the-log)
-12. [FAQ](#12-faq)
-13. [Privacy](#13-privacy)
-14. [Uninstalling](#14-uninstalling)
+12. [The PDF report](#12-the-pdf-report)
+13. [FAQ](#13-faq)
+14. [Privacy](#14-privacy)
+15. [Uninstalling](#15-uninstalling)
 
 **Part 2 — for developers**
-15. [Architecture overview](#15-architecture-overview)
-16. [The survival strategy](#16-the-survival-strategy)
-17. [Why `targetSdk 32`](#17-why-targetsdk-32)
-18. [Detecting CamAPS FX without root](#18-detecting-camaps-fx-without-root)
-19. [Controlling Bluetooth in layers](#19-controlling-bluetooth-in-layers)
-20. [Building](#20-building)
-21. [Code map](#21-code-map)
-22. [What is verified, what is not](#22-what-is-verified-what-is-not)
-23. [Contributing](#23-contributing)
-24. [License](#24-license)
+16. [Architecture overview](#16-architecture-overview)
+17. [The survival strategy](#17-the-survival-strategy)
+18. [Why `targetSdk 32`](#18-why-targetsdk-32)
+19. [Detecting CamAPS FX without root](#19-detecting-camaps-fx-without-root)
+20. [Controlling Bluetooth in layers](#20-controlling-bluetooth-in-layers)
+21. [Building](#21-building)
+22. [Code map](#22-code-map)
+23. [What is verified, what is not](#23-what-is-verified-what-is-not)
+24. [Contributing](#24-contributing)
+25. [License](#25-license)
 
 ---
 
@@ -708,6 +815,10 @@ On every round, in this order:
 | 4 | Battery and sleep | Nothing destructive: a reminder if the battery drops below 15 % |
 | 5 | Is the alarm chain still intact? | Re-arming, rewriting the ongoing notification |
 
+Each round is also recorded in a **history** kept for 100 days on the phone: that is what lets
+you produce, on request, a [PDF report](#12-the-pdf-report) with a pie chart and graphs over a day,
+a week, a month or three months.
+
 It keeps going **whatever happens**: it never stops on its own, not at 3 % battery, not in deep
 sleep, not after a phone reboot.
 
@@ -727,7 +838,7 @@ Saying what a tool does not do matters as much as the rest.
   come to the foreground recently, its state is “unknown” — and in that case it restarts nothing, out
   of caution.
 - **It is not published on the Play Store**, and cannot be in this state (see
-  [§17](#17-why-targetsdk-32)). You install it by hand, knowingly.
+  [§18](#18-why-targetsdk-32)). You install it by hand, knowingly.
 
 ## 6. What you need on your phone
 
@@ -743,7 +854,7 @@ Nothing else. No account, no internet connection, no server.
 ### 7.1 Get the app
 
 Download [`app-release.apk`](https://github.com/Najah69/camaps-guardian/releases/latest) from the
-**Releases** page of this repository, or build it yourself (see [§20](#20-building)).
+**Releases** page of this repository, or build it yourself (see [§21](#21-building)).
 
 ### 7.2 Allow installation from an unknown source
 
@@ -756,7 +867,7 @@ open it for this installation only.
 4. Go back and tap **Install**.
 
 > You may see “App designed for an older version of Android”. That is normal and deliberate: see
-> [§17](#17-why-targetsdk-32). It does not prevent you from installing it, and does not affect how it
+> [§18](#18-why-targetsdk-32). It does not prevent you from installing it, and does not affect how it
 > works.
 
 ### 7.3 Grant the permissions
@@ -815,7 +926,7 @@ The exact name varies from one model to another. Look in the settings for the wo
 3. Read the summary line under the buttons: it should look like
    `BT on · 2 connected · CamAPS active · 78 %`.
 
-If it shows `CamAPS silent`, read the [FAQ](#12-faq).
+If it shows `CamAPS silent`, read the [FAQ](#13-faq).
 
 ![CamAPS Guardian main screen](docs/ecran-principal-en.png)
 
@@ -849,7 +960,9 @@ draining the battery.
 | **Check now** | Runs a round immediately (without waiting for the alarm) |
 | **Restart CamAPS** | Brings CamAPS FX back to the foreground right away |
 | **Detect CamAPS FX** | Finds CamAPS FX's package name and saves it |
-| **Clear log** | Empties the log (useful before reporting a problem) |
+| **Clear log** | Empties the log (useful before reporting a problem) — the report history is not touched |
+| **Export log (Downloads)** | Copies the full log to `Download/camaps-guardian-journal-YYYYMMDD-HHMMSS.txt` |
+| **Create PDF report** | In the **Report** panel: see [§12](#12-the-pdf-report) |
 
 ## 11. Reading the log
 
@@ -878,10 +991,68 @@ starts with a time and a category.
 | `[system]` | Time change, doze |
 | `[event]` | Charger plugged in, etc. |
 
-You can also retrieve this log from the app's `files/journal.txt` file, reachable through `adb` or
-through a backup.
+The screen only shows its last 40 lines. To read the full log, tap **Export log (Downloads)**:
+the text file appears in the Downloads folder, from where you can open it, share it or copy it to
+a computer (`adb pull /sdcard/Download/camaps-guardian-journal-…txt`). That is the only way: the
+app forbids Android backups and `run-as` does not work on a signed build.
 
-## 12. FAQ
+## 12. The PDF report
+
+The log says what happened round by round; the **report** sums up a period, with charts anyone
+can read — you, a relative, your diabetes team.
+
+**How to get it.** In the **Report** panel, pick the period and tap **Create PDF report**:
+
+| Choice | Period covered | Main chart |
+|---|---|---|
+| **Day** | the last 24 hours | hour by hour |
+| **Week** | the last 7 days, today included | day by day |
+| **Month** | the last 30 days | day by day |
+| **3 months** | the last 13 weeks | week by week |
+
+The file `camaps-guardian-rapport-<period>-YYYYMMDD-HHMM.pdf` is saved to **Downloads**; the
+**Open** and **Share** buttons appear right below.
+
+**What it contains (3 A4 pages).**
+
+1. **Summary** — four key figures (share of time with the link OK, outages of 30 minutes or more,
+   longest outage, share of time actually monitored), a **pie chart** of how time splits between
+   the states below, and a **written analysis**: comparison with the previous period of the same
+   length, main cause of outages, hours when they cluster, Guardian's interventions, battery.
+2. **Charts** — stacked bars by hour, day or week; outages by time of day (to spot, say, a problem
+   that comes back every night); battery curve.
+3. **Details** — table of interventions (rounds, Bluetooth turned back on, CamAPS restarted,
+   cycles, phone restarts, time below 15 % battery), the 15 longest outages with their cause, and
+   the calculation method.
+
+**The states, and their colour.**
+
+| State | Colour | What it means |
+|---|---|---|
+| Link OK | green | Bluetooth on, at least one device connected, CamAPS FX active |
+| No BT device connected | yellow | Bluetooth on but nothing connected: most often the sensor or transmitter (range, end of life) |
+| CamAPS FX silent or absent | orange | No sign of life from CamAPS FX during the round |
+| Bluetooth off | red | Bluetooth was switched off |
+| Uncertain state | grey | Some information was missing (a permission not granted, for example) |
+| Not monitored | light grey | No news from Guardian: phone off, monitoring stopped, rounds delayed |
+
+Each state is assumed to hold until the next round, for at most two and a half rounds (25 min with
+a round every 10 min), and never past a phone restart.
+
+**Good to know.**
+
+- **It needs time.** History starts when version 1.3 is installed (plus whatever the log still
+  held, a day or two). A "3 months" report asked for in the first week says so at the top and only
+  covers the days available.
+- **"No device connected" does not name the sensor.** Android says how many devices are
+  connected, not which ones: a connected watch or earbuds can hide a sensor loss. Only CamAPS FX
+  knows whether *its* sensor answers.
+- **It is not a medical document.** It contains no glucose value and no dose: only the state of
+  the link. It complements CamAPS FX's own reports, it does not replace them.
+- **The report is yours.** It is only created when you ask, stays in Downloads and goes nowhere
+  until you share it. It mentions the phone model.
+
+## 13. FAQ
 
 **“CamAPS FX not found”**
 The saved package name does not match. Tap **Detect CamAPS FX**: the app finds the right name and
@@ -896,7 +1067,7 @@ deliberate.
 **A “Bluetooth is off” alert appears**
 Android 13 and above forbids an ordinary app from turning Bluetooth back on. Tap the alert:
 Bluetooth comes back on. To make that automatic you need **root** or **Shizuku** — see
-[§19](#19-controlling-bluetooth-in-layers).
+[§20](#20-controlling-bluetooth-in-layers).
 
 **“0 connected” while the sensor works**
 The sensor is not connected *at that instant*. That happens during a reconnection. What matters is
@@ -912,25 +1083,29 @@ One round every 10 minutes costs very little. If you notice unusual consumption,
 minutes. An empty battery is a more serious problem than one round fewer.
 
 **Does it work on my phone?**
-See [§22](#22-what-is-verified-what-is-not): only one brand has actually been tested. The mechanisms
+See [§23](#23-what-is-verified-what-is-not): only one brand has actually been tested. The mechanisms
 used are standard, but every manufacturer layer has its surprises.
 
 **Can I install it on the phone that carries the closed loop?**
 Yes — that is even its intended use. But read [§5](#5-what-it-does-not-do) first, and keep the CamAPS
 FX alarms.
 
-## 13. Privacy
+## 14. Privacy
 
 - **No internet connection.** The app does not even ask for the network permission.
 - **No data sent anywhere.** No account, no telemetry, no advertising.
-- **Everything stays on the phone**: the settings in Android preferences, the log in a local file.
+- **Everything stays on the phone**: the settings in Android preferences, the log and the round
+  history (100 days) in the app's private files.
+- **Exported files are yours.** An exported log or a PDF report is only created when you tap the
+  matching button. It is then placed in Downloads, where other apps with access to your files can
+  read it: delete it when you no longer need it.
 - **No access to your glucose values.** The app reads neither CamAPS FX history nor sensor data: it
   only checks that Bluetooth is on, that a device is connected, and that CamAPS FX has a notification
   on screen.
 
 The code is public: you can check all of that yourself.
 
-## 14. Uninstalling
+## 15. Uninstalling
 
 1. First turn monitoring off (the **Monitoring active** switch). That cancels the alarms and the
    scheduled job.
@@ -944,7 +1119,7 @@ CamAPS Guardian never touches its data.
 
 # Part 2 — for developers
 
-## 15. Architecture overview
+## 16. Architecture overview
 
 ```
 Wake-ups
@@ -973,7 +1148,7 @@ The service does almost nothing itself: it triggers `Watchdog.check()`, which ma
 and writes everything down. The UI reads a `Snap` (a snapshot of the state) exposed through a
 `StateFlow` — it never drives the monitoring.
 
-## 16. The survival strategy
+## 17. The survival strategy
 
 None of these mechanisms is enough on its own; it is their stacking that holds.
 
@@ -994,7 +1169,7 @@ The details of how the alarms are sized are in `core/Alarms.kt`: primary alarm (
 `setExactAndAllowWhileIdle` fallback, then `setAndAllowWhileIdle`, and finally a persistent
 `JobScheduler`. Every failure is logged — you always know which strategy worked.
 
-## 17. Why `targetSdk 32`
+## 18. Why `targetSdk 32`
 
 `BluetoothAdapter.enable()` is deprecated and restricted: from Android 13 (API 33) on, an app that
 **targets** 33 or more can no longer enable Bluetooth programmatically. By targeting **32**, the call
@@ -1009,7 +1184,7 @@ Accepted consequences:
 On Android 15, in practice, the refusal is frequent even when targeting 32: the fallbacks (root,
 Shizuku, alert) are not decorative, they are often the only paths that work.
 
-## 18. Detecting CamAPS FX without root
+## 19. Detecting CamAPS FX without root
 
 Three independent signals, from the most reliable to the weakest:
 
@@ -1028,7 +1203,7 @@ The restart goes through the **launch intent** (`NEW_TASK | RESET_TASK_IF_NEEDED
 REORDER_TO_FRONT`), with a `monkey -p <pkg> -c android.intent.category.LAUNCHER 1` fallback.
 **Never `force-stop`, never `pm clear`**: that would destroy the loop in order to “repair” it.
 
-## 19. Controlling Bluetooth in layers
+## 20. Controlling Bluetooth in layers
 
 ```
 1. BluetoothAdapter.enable()                  → direct, if the system allows it
@@ -1045,7 +1220,7 @@ The full-screen alert uses `USE_FULL_SCREEN_INTENT` and `SYSTEM_ALERT_WINDOW`, w
 starting an activity from the background (`Background activity start ... allowed because
 SYSTEM_ALERT_WINDOW permission is granted`, visible in logcat).
 
-## 20. Building
+## 21. Building
 
 Prerequisites: **JDK 17** (or more recent to launch Gradle) and the **Android SDK** with
 `compileSdk 36`.
@@ -1059,7 +1234,7 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties   # or set ANDROID_HOME
 gradlew.bat :app:assembleRelease      # Windows
 ```
 
-The APK is written to `app/build/outputs/apk/release/app-release.apk` (about 7.7 MB).
+The APK is written to `app/build/outputs/apk/release/app-release.apk` (about 8 MB).
 
 ### Signing
 
@@ -1084,7 +1259,7 @@ keyPassword=...
 `guardian.jks` and `keystore.properties` are in `.gitignore`: **never publish them**. A lost or
 leaked signing key cannot be recovered.
 
-## 21. Code map
+## 22. Code map
 
 ```
 app/src/main/java/com/najah/camapsguardian/
@@ -1107,14 +1282,40 @@ app/src/main/java/com/najah/camapsguardian/
 │   ├── WakeJobService.kt    Persistent periodic job
 │   ├── Receivers.kt         Wake-up, boot, time change
 │   ├── Control.kt           High-level actions (enable, interval, check)
-│   └── Status.kt            State snapshot for the UI
+│   ├── Status.kt            State snapshot for the UI
+│   ├── History.kt           Structured round history (100 days) + log import
+│   ├── Report.kt            Analysis: states, outages, time slots, comparison
+│   ├── ReportPdf.kt         PDF rendering with Android's Canvas (no library)
+│   └── Downloads.kt         Writing to Downloads (MediaStore)
 └── ui/                      MainActivity, Compose screen, theme
 ```
+
+### History and report
+
+The text log is not enough for statistics: it rotates at 150 KB (a day or two) and its language
+follows the phone's. `History` therefore keeps, in `files/history.csv`, one line per round and per
+event:
+
+```
+R;1792656000000;1;1;ALIVE;44;0;          round: bt, devices, presence, battery, plugged, flags
+R;1792656600000;1;0;NOT_ALIVE;43;0;L     flags: B re-enabled, U approval asked, L restart, C cycle, M manual
+E;1792657000000;BOOT                     event: BOOT, ON, OFF
+```
+
+About 1 MB for 90 days of rounds every 10 minutes; lines older than 100 days are pruned. On first
+start, `JournalImport` reads back the round summaries of the existing log (French or English) so
+that the first report does not start from scratch.
+
+`Report.analyze()` cuts the period into intervals (each round holds until the next one, at most
+2.5 rounds, cut short by a `BOOT`), classifies them by state, spreads them over the chart's slots
+and over the hours of the day, and groups consecutive problem intervals into outages. `ReportPdf`
+draws three A4 pages with `android.graphics.pdf.PdfDocument`: no dependency, no network, and state
+colours always come with their label and percentage.
 
 Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1, `minSdk 26`,
 `compileSdk 36`, `targetSdk 32`, `jvmToolchain(17)`.
 
-## 22. What is verified, what is not
+## 23. What is verified, what is not
 
 **Verified on a real device** — Hammer Iron 6 5G, Android 15 (API 35), without root or Shizuku:
 
@@ -1129,6 +1330,12 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 - [x] No unwanted restart when CamAPS FX is already alive
 - [x] **French** then **English** display of the interface, after switching the app language:
       header, state, frequencies, permissions, actions, log, footnote
+- [x] **Log export** (1.2) to Downloads, then retrieval with `adb pull`
+- [x] **Version 1.3** installed over 1.2 (`adb install -r`): data kept, foreground service still
+      running
+- [x] **PDF report** created for all four periods and reviewed page by page: figures match the log
+      (a 6 h 43 outage found to the minute), import of the existing log (199 round summaries out of
+      199 recognised), Open and Share buttons
 
 **Not verified, and reported as such**:
 
@@ -1138,13 +1345,14 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 - [ ] Behaviour over several weeks (memory leak, battery drift)
 - [ ] Deep Doze mode over a whole night
 - [ ] Android 8 to 14 (only Android 15 was used)
-- [ ] Version **1.1** itself was not reinstalled on the phone (it was disconnected while being
-      prepared): it differs from the tested build only by the version number and the language
-      declarations, but it is not the same file signature
+- [ ] The report's **Open** and **Share** buttons (the PDFs were reviewed on a computer)
+- [ ] A report over three **real** months: the test history only covers a few days so far
+- [ ] PDF report **in English**: the texts are translated, but no English report has been created
+      and reviewed yet
 
 If you test on another device, feedback in the *Issues* has value — especially if it is negative.
 
-## 23. Contributing
+## 24. Contributing
 
 Feedback is welcome, in particular:
 
@@ -1155,7 +1363,7 @@ Feedback is welcome, in particular:
 Please **do not attach** screenshots containing your glucose values, your name, or health data: an
 excerpt of the CamAPS Guardian log is always enough.
 
-## 24. License
+## 25. License
 
 MIT — see [LICENSE](LICENSE). Do whatever you want with it, including commercially, with no warranty
 of any kind.

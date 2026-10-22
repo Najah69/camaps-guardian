@@ -14,6 +14,7 @@ object Control {
             ctx.tr(R.string.cat_control),
             ctx.tr(R.string.log_control_enabled, p.checkMinutes)
         )
+        History.event(System.currentTimeMillis(), History.EV_ON)
         Alarms.schedule(ctx, p.checkMinutes)
         WatchdogService.start(ctx, ctx.tr(R.string.log_trigger_activation))
     }
@@ -21,6 +22,7 @@ object Control {
     fun disable(ctx: Context) {
         Prefs.get(ctx).update { it.copy(enabled = false, nextCheckAt = 0L) }
         Logbook.add(ctx.tr(R.string.cat_control), ctx.tr(R.string.log_control_disabled))
+        History.event(System.currentTimeMillis(), History.EV_OFF)
         Alarms.cancel(ctx)
         WatchdogService.stop(ctx)
     }

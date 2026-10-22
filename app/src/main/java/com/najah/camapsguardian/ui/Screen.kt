@@ -51,15 +51,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.najah.camapsguardian.R
 import com.najah.camapsguardian.core.Control
 import com.najah.camapsguardian.core.Fmt
+import com.najah.camapsguardian.core.History
 import com.najah.camapsguardian.core.Logbook
 import com.najah.camapsguardian.core.P
+import com.najah.camapsguardian.core.Period
 import com.najah.camapsguardian.core.Presence
+import com.najah.camapsguardian.core.ReportPdf
 import com.najah.camapsguardian.core.Shell
 import com.najah.camapsguardian.core.Snap
 import com.najah.camapsguardian.core.Status
 import com.najah.camapsguardian.core.tr
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val Ok = Color(0xFF37D67A)
 private val Warn = Color(0xFFFFB020)
@@ -170,10 +175,27 @@ fun GuardianScreen() {
                         Text(stringResource(R.string.ui_clear_log), fontSize = 12.sp)
                     }
                 }
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            message = runCatching {
+                                withContext(Dispatchers.IO) { Logbook.export(ctx) }
+                            }.fold(
+                                { ctx.tr(R.string.ui_log_exported, it) },
+                                { ctx.tr(R.string.ui_log_export_failed, it.message ?: it.javaClass.simpleName) }
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.ui_export_log), fontSize = 12.sp)
+                }
                 if (message.isNotBlank()) {
                     Text(message, fontSize = 11.sp, color = Dim)
                 }
             }
+
+            ReportPanel()
 
             LogPanel(logs)
 
@@ -561,6 +583,102 @@ private fun Footnote() {
         lineHeight = 14.sp,
         textAlign = TextAlign.Start
     )
+}
+
+// ------------------------------------------------------------------ rapport
+
+@Composable
+private fun ReportPanel() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var period by remember { mutableStateOf(Period.WEEK) }
+    var busy by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf("") }
+    var pdf by remember { mutableStateOf<Uri?>(null) }
+    Panel(stringResource(R.string.ui_report)) {
+        Text(
+            stringResource(R.string.ui_report_note, History.KEEP_DAYS),
+            fontSize = 10.sp,
+            color = Dim,
+            lineHeight = 13.sp
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(
+                Period.DAY to R.string.ui_report_day,
+                Period.WEEK to R.string.ui_report_week,
+                Period.MONTH to R.string.ui_report_month,
+                Period.QUARTER to R.string.ui_report_quarter
+            ).forEach { (p, label) ->
+                FilterChip(
+                    selected = p == period,
+                    onClick = { period = p },
+                    label = { Text(stringResource(label), fontSize = 11.sp) }
+                )
+            }
+        }
+        Button(
+            onClick = {
+                if (!busy) {
+                    busy = true
+                    scope.launch {
+                        runCatching {
+                            withContext(Dispatchers.IO) { ReportPdf.export(ctx, period) }
+                        }.fold(
+                            {
+                                result = ctx.tr(R.string.ui_report_done, it.label)
+                                pdf = it.uri
+                            },
+                            {
+                                result = ctx.tr(
+                                    R.string.ui_report_failed,
+                                    it.message ?: it.javaClass.simpleName
+                                )
+                                pdf = null
+                            }
+                        )
+                        busy = false
+                    }
+                }
+            },
+            enabled = !busy,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                stringResource(if (busy) R.string.ui_report_making else R.string.ui_report_make),
+                fontSize = 12.sp
+            )
+        }
+        if (result.isNotBlank()) {
+            Text(result, fontSize = 11.sp, color = Dim)
+        }
+        pdf?.let { uri ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        val view = Intent(Intent.ACTION_VIEW)
+                            .setDataAndType(uri, "application/pdf")
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (!launch(ctx, view)) result = ctx.tr(R.string.ui_report_no_viewer)
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.ui_report_open), fontSize = 12.sp)
+                }
+                OutlinedButton(
+                    onClick = {
+                        val send = Intent(Intent.ACTION_SEND)
+                            .setType("application/pdf")
+                            .putExtra(Intent.EXTRA_STREAM, uri)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        launch(ctx, Intent.createChooser(send, null))
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.ui_report_share), fontSize = 12.sp)
+                }
+            }
+        }
+    }
 }
 
 // ------------------------------------------------------------------ briques

@@ -36,6 +36,8 @@ class Watchdog(private val ctx: Context) {
             cam.ensureTargets()?.let { Logbook.add(ctx.tr(R.string.cat_camaps), it) }
             val actions = mutableListOf<String>()
             val notes = mutableListOf<String>()
+            val flags = StringBuilder()
+            if (manual) flags.append(History.F_MANUAL)
 
             var btFixes = p0.btFixes
             var relaunches = p0.relaunches
@@ -56,10 +58,12 @@ class Watchdog(private val ctx: Context) {
                             btOn = true
                             btFixes++
                             lastRecovery = now
+                            flags.append(History.F_BT_FIX)
                             actions += ctx.tr(R.string.log_bt_on)
                         }
                         BtEnable.ON -> btOn = true
                         BtEnable.NEEDS_USER -> {
+                            flags.append(History.F_NEEDS_USER)
                             actions += ctx.tr(R.string.log_bt_needs_user)
                             Notifier.alertBt(ctx, ctx.tr(R.string.notif_bt_detail))
                         }
@@ -104,6 +108,7 @@ class Watchdog(private val ctx: Context) {
                             lastRecovery = now
                             canRecover = false
                             deadStreak = 0
+                            flags.append(History.F_RELAUNCH)
                             actions += ctx.tr(R.string.log_camaps_relaunched, how)
                         }
                     } else if (p0.appAuto && deadStreak >= 2 && !canRecover) {
@@ -152,6 +157,7 @@ class Watchdog(private val ctx: Context) {
                             relaunches++
                             lastRecovery = now
                             canRecover = false
+                            flags.append(History.F_RELAUNCH)
                             actions += ctx.tr(R.string.log_camaps_relaunched_bt)
                         }
                     }
@@ -164,6 +170,7 @@ class Watchdog(private val ctx: Context) {
                     }
                     if (p0.aggressiveCycle && lossStreak >= 4 && canRecover) {
                         if (bt.cycle()) {
+                            flags.append(History.F_CYCLE)
                             actions += ctx.tr(R.string.log_bt_cycle)
                             lastRecovery = now
                             canRecover = false
@@ -221,6 +228,15 @@ class Watchdog(private val ctx: Context) {
                 )
             }
             Logbook.add(ctx.tr(R.string.cat_round), summary)
+            History.round(
+                at = now,
+                bt = if (!bt.hasHardware()) -1 else if (btOn) 1 else 0,
+                devices = devices ?: -1,
+                presence = presence.state,
+                battery = battery.percent,
+                charging = if (battery.percent < 0) -1 else if (battery.charging) 1 else 0,
+                flags = flags.toString()
+            )
             return@withContext summary
         }
 

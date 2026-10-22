@@ -37,6 +37,10 @@ class BootReceiver : BroadcastReceiver() {
                 ctx.tr(if (p.enabled) R.string.ui_monitoring_on else R.string.ui_monitoring_off)
             )
         )
+        if (intent.action?.endsWith("BOOT_COMPLETED") == true) {
+            History.init(ctx)
+            History.event(System.currentTimeMillis(), History.EV_BOOT)
+        }
         if (!p.enabled) return
         runCatching { Alarms.schedule(ctx, p.checkMinutes) }
         WatchdogService.start(ctx, ctx.tr(R.string.log_trigger_start))

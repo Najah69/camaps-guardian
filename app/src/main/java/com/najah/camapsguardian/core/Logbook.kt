@@ -59,6 +59,26 @@ object Logbook {
         }
     }
 
+    /**
+     * Copie le journal complet dans Téléchargements (voir [Downloads]).
+     * Renvoie le nom du fichier écrit ; lève une exception en cas d'échec.
+     */
+    fun export(ctx: Context): String {
+        val text = synchronized(this) {
+            val f = file
+            if (f != null && f.exists()) f.readText()
+            else lines.joinToString("\n", postfix = "\n")
+        }
+        val name = "camaps-guardian-journal-" +
+            SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date()) + ".txt"
+        return Downloads.save(ctx, name, "text/plain", text.toByteArray()).label
+    }
+
+    /** Contenu du fichier journal (pour l'import initial de l'historique). */
+    @Synchronized
+    fun fileLines(): List<String> =
+        runCatching { file?.takeIf { it.exists() }?.readLines() }.getOrNull() ?: lines.toList()
+
     @Synchronized
     fun clear() {
         lines.clear()
