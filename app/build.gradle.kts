@@ -17,8 +17,8 @@ android {
         // le Bluetooth par programme (BluetoothAdapter.enable() renvoie false).
         // En restant sous 33, le watchdog peut rallumer le Bluetooth tout seul.
         targetSdk = 32
-        versionCode = 6
-        versionName = "1.5"
+        versionCode = 7
+        versionName = "1.5.1"
         vectorDrawables { useSupportLibrary = true }
     }
 

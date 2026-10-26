@@ -23,6 +23,8 @@ class Watchdog(private val ctx: Context) {
         const val XDRIP_VERIFY_MIN = 6
         /** Panne qui résiste aux réparations alors que xDrip+ tourne : on espace (cause ailleurs). */
         const val XDRIP_SLOW_REPAIR_MIN = 30
+        /** Rappel tant que Shizuku reste arrêté. */
+        const val SHIZUKU_REMINDER_H = 4
     }
 
     private val prefs: Prefs get() = Prefs.get(ctx)
@@ -74,6 +76,7 @@ class Watchdog(private val ctx: Context) {
                     )
                 }
             }
+            shizukuReminder(now)
             val xd = XdripCtl(ctx)
             val watchXdrip = p0.xdripWatch && xd.isInstalled()
             val probes = Privileged.probe(
@@ -444,6 +447,45 @@ class Watchdog(private val ctx: Context) {
             )
             return@withContext summary
         }
+
+    /**
+     * Sans root, Shizuku s'arrête à chaque redémarrage du téléphone. S'il a déjà servi à
+     * Guardian, on le rappelle : tout de suite, puis toutes les [SHIZUKU_REMINDER_H] heures.
+     */
+    private fun shizukuReminder(now: Long) {
+        if (!Shell.shizukuInstalled(ctx)) return
+        val p = prefs.value
+        if (Shell.hasShizuku()) {
+            if (!p.shizukuSeen || p.shizukuLostAt != 0L) {
+                if (p.shizukuLostAt != 0L) {
+                    Logbook.add(
+                        ctx.tr(R.string.cat_shell),
+                        ctx.tr(R.string.log_shizuku_back, ReportPdf.duration(ctx, now - p.shizukuLostAt))
+                    )
+                }
+                Notifier.cancel(ctx, Notifier.ID_SHIZUKU)
+                prefs.update { it.copy(shizukuSeen = true, shizukuLostAt = 0L) }
+            }
+            return
+        }
+        if (!p.shizukuSeen) return
+        val first = p.shizukuLostAt == 0L
+        if (!first && now - p.lastShizukuHintAt < SHIZUKU_REMINDER_H * 3_600_000L - 60_000L) return
+        val lostAt = if (first) now else p.shizukuLostAt
+        // Shizuku tourne mais n'autorise plus Guardian : c'est dans Guardian qu'il faut agir.
+        val running = Shell.shizukuRunning()
+        Notifier.shizukuHint(
+            ctx,
+            ctx.tr(if (running) R.string.notif_shizuku_denied_title else R.string.notif_shizuku_title),
+            ctx.tr(if (running) R.string.notif_shizuku_denied_text else R.string.notif_shizuku_text),
+            openShizuku = !running
+        )
+        Logbook.add(
+            ctx.tr(R.string.cat_shell),
+            ctx.tr(R.string.log_shizuku_hint, ReportPdf.duration(ctx, now - lostAt))
+        )
+        prefs.update { it.copy(shizukuLostAt = lostAt, lastShizukuHintAt = now) }
+    }
 
     private fun buildSummary(
         btOn: Boolean,

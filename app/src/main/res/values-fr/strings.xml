@@ -455,4 +455,11 @@
     <string name="rep_xdrip_row_fixes">Réparations par Guardian</string>
     <string name="rep_xdrip_method">xDrip+ lit les glycémies dans la notification de CamAPS FX. À chaque ronde, Guardian vérifie qu’il est installé, qu’il tourne, que son accès aux notifications est coché et réellement branché par Android (avec Shizuku), et que sa notification change quand CamAPS publie de nouvelles valeurs. Une panne est une suite de rondes où xDrip+ ne collectait pas ; elle compte à part des coupures ci-dessus car elle n’interrompt pas la boucle d’insuline, seulement le suivi (Nightscout, alertes xDrip+). Les glycémies manquées pendant une panne ne sont pas récupérées par xDrip+.</string>
 
+    <string name="notif_shizuku_title">Shizuku est arrêté</string>
+    <string name="notif_shizuku_text">Le téléphone a sans doute redémarré. Guardian surveille toujours, mais sans Shizuku il ne rallume plus le Bluetooth sans vous et ne répare xDrip+ qu’au déverrouillage. Relancez Shizuku : touchez ici pour l’ouvrir (débogage sans fil), ou branchez le téléphone à l’ordinateur et lancez la commande adb que Shizuku affiche.</string>
+    <string name="notif_shizuku_denied_title">Shizuku n’autorise plus Guardian</string>
+    <string name="notif_shizuku_denied_text">Shizuku tourne, mais Guardian n’y a plus accès. Ouvrez CamAPS Guardian et touchez « Autoriser Shizuku ».</string>
+    <string name="log_shizuku_hint">Shizuku arrêté depuis %1$s : rappel envoyé</string>
+    <string name="log_shizuku_back">Shizuku de nouveau disponible (arrêté pendant %1$s)</string>
+
 </resources>

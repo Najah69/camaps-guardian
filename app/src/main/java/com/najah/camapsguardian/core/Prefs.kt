@@ -42,6 +42,11 @@ data class P(
     val lastXdripAlertAt: Long = 0L,
     val lastXdripRepairAt: Long = 0L,
     val xdripRepairs: Int = 0,
+    /** Shizuku a déjà fonctionné pour Guardian : son arrêt mérite un rappel. */
+    val shizukuSeen: Boolean = false,
+    /** Début de l'arrêt de Shizuku en cours, 0 sinon. */
+    val shizukuLostAt: Long = 0L,
+    val lastShizukuHintAt: Long = 0L,
     val checks: Int = 0,
     val btFixes: Int = 0,
     val relaunches: Int = 0,
@@ -95,6 +100,9 @@ class Prefs private constructor(private val sp: SharedPreferences) {
         lastXdripAlertAt = sp.getLong("lastXdripAlertAt", 0L),
         lastXdripRepairAt = sp.getLong("lastXdripRepairAt", 0L),
         xdripRepairs = sp.getInt("xdripRepairs", 0),
+        shizukuSeen = sp.getBoolean("shizukuSeen", false),
+        shizukuLostAt = sp.getLong("shizukuLostAt", 0L),
+        lastShizukuHintAt = sp.getLong("lastShizukuHintAt", 0L),
         checks = sp.getInt("checks", 0),
         btFixes = sp.getInt("btFixes", 0),
         relaunches = sp.getInt("relaunches", 0),
@@ -128,6 +136,9 @@ class Prefs private constructor(private val sp: SharedPreferences) {
             .putLong("lastXdripAlertAt", p.lastXdripAlertAt)
             .putLong("lastXdripRepairAt", p.lastXdripRepairAt)
             .putInt("xdripRepairs", p.xdripRepairs)
+            .putBoolean("shizukuSeen", p.shizukuSeen)
+            .putLong("shizukuLostAt", p.shizukuLostAt)
+            .putLong("lastShizukuHintAt", p.lastShizukuHintAt)
             .putInt("checks", p.checks)
             .putInt("btFixes", p.btFixes)
             .putInt("relaunches", p.relaunches)

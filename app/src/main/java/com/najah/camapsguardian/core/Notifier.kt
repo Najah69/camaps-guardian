@@ -23,6 +23,7 @@ object Notifier {
     const val ID_INFO = 1004
     const val ID_ALERT_SENSOR = 1005
     const val ID_ALERT_XDRIP = 1006
+    const val ID_SHIZUKU = 1007
 
     fun ensureChannels(ctx: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -168,6 +169,37 @@ object Notifier {
             .setContentIntent(openApp(ctx))
             .build()
         return post(ctx, ID_ALERT_XDRIP, n)
+    }
+
+    /**
+     * Shizuku arrêté (en général après un redémarrage du téléphone) : simple rappel, priorité
+     * normale — Guardian continue de surveiller, avec moins de moyens. Toucher ouvre Shizuku
+     * (ou Guardian, quand il s'agit d'autoriser Shizuku).
+     */
+    fun shizukuHint(ctx: Context, title: String, text: String, openShizuku: Boolean) {
+        val launch = if (openShizuku) {
+            runCatching { ctx.packageManager.getLaunchIntentForPackage(Shell.SHIZUKU_PKG) }.getOrNull()
+        } else {
+            null
+        }
+        val tap = if (launch != null) {
+            PendingIntent.getActivity(
+                ctx, 12, launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), flags()
+            )
+        } else {
+            openApp(ctx)
+        }
+        val n = NotificationCompat.Builder(ctx, CH_ALERT)
+            .setSmallIcon(R.drawable.ic_stat_guardian)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(tap)
+            .build()
+        post(ctx, ID_SHIZUKU, n)
     }
 
     /** Les notifications de l'application sont-elles autorisées et le canal d'alerte actif ? */

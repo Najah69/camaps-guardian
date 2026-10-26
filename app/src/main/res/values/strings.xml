@@ -455,4 +455,11 @@
     <string name="rep_xdrip_row_fixes">Repairs by Guardian</string>
     <string name="rep_xdrip_method">xDrip+ reads glucose values from the CamAPS FX notification. Every round, Guardian checks that it is installed, running, that its notification access is ticked and actually bound by Android (with Shizuku), and that its notification changes when CamAPS publishes new values. An outage is a run of rounds where xDrip+ was not collecting; it is counted apart from the outages above because it does not interrupt the insulin loop, only the follow-up (Nightscout, xDrip+ alerts). Readings missed during an outage are not recovered by xDrip+.</string>
 
+    <string name="notif_shizuku_title">Shizuku is stopped</string>
+    <string name="notif_shizuku_text">The phone has probably restarted. Guardian is still watching, but without Shizuku it no longer turns Bluetooth back on by itself and only repairs xDrip+ at unlock. Start Shizuku again: tap here to open it (wireless debugging), or connect the phone to the computer and run the adb command Shizuku shows.</string>
+    <string name="notif_shizuku_denied_title">Shizuku no longer allows Guardian</string>
+    <string name="notif_shizuku_denied_text">Shizuku is running, but Guardian no longer has access. Open CamAPS Guardian and tap “Allow Shizuku”.</string>
+    <string name="log_shizuku_hint">Shizuku stopped for %1$s: reminder sent</string>
+    <string name="log_shizuku_back">Shizuku available again (stopped for %1$s)</string>
+
 </resources>

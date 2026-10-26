@@ -110,6 +110,17 @@ object Shell {
         return ok
     }
 
+    const val SHIZUKU_PKG = "moe.shizuku.privileged.api"
+
+    /** L'application Shizuku est-elle installée ? */
+    fun shizukuInstalled(ctx: android.content.Context): Boolean = try {
+        @Suppress("DEPRECATION")
+        ctx.packageManager.getPackageInfo(SHIZUKU_PKG, 0)
+        true
+    } catch (t: Throwable) {
+        false
+    }
+
     /** Shizuku tourne-t-il (autorisé ou non) ? */
     fun shizukuRunning(): Boolean = try {
         Shizuku.pingBinder()

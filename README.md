@@ -449,9 +449,19 @@ Installation :
 3. Dans CamAPS Guardian, panneau **AUTORISATIONS**, touchez **Autoriser Shizuku**, puis
    **Toujours autoriser**. La ligne devient « Privilèges : Shizuku ».
 
-> **Sans root, Shizuku s'arrête à chaque redémarrage du téléphone** : il faut le redémarrer. En
-> attendant, le bouton affiche « Shizuku arrêté » et Guardian se replie sur le service
-> d'accessibilité et les alertes. Shizuku donne à Guardian les droits d'adb : Guardian n'utilise
+> **Sans root, Shizuku s'arrête à chaque redémarrage du téléphone**, et la version officielle
+> (13.6.0) ne sait pas redémarrer seule sans root. Une fois lancé, il tient même câble
+> débranché. Après un redémarrage, **Guardian vous envoie une notification « Shizuku est
+> arrêté »** (puis toutes les 4 heures tant qu'il l'est) : la toucher ouvre Shizuku. Elle
+> disparaît d'elle-même quand Shizuku revient. En attendant, Guardian se replie sur le service
+> d'accessibilité et les alertes.
+>
+> Sur le téléphone de test (Hammer Iron 6 5G, Android 15), le démarrage **par débogage sans fil**
+> échoue : le téléphone coupe la connexion et le serveur de Shizuku meurt avec elle. Seul le
+> démarrage **depuis un ordinateur** (câble USB, commande `adb` affichée par Shizuku) fonctionne.
+> Essayez d'abord le débogage sans fil sur votre téléphone ; s'il échoue, utilisez l'ordinateur.
+>
+> Shizuku donne à Guardian les droits d'adb : Guardian n'utilise
 > que les commandes listées au [§21](#21-contrôler-le-bluetooth-en-couches), jamais `force-stop`
 > ni `pm clear`. Le débogage sans fil ne doit rester activé que sur un réseau de confiance.
 
@@ -820,6 +830,11 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
       écouteur rebranché sans intervention → nouvelle glycémie reçue, « xDrip+ collecte de nouveau »
 - [x] Service d'accessibilité lié (activé par adb), sans conflit avec un autre service d'accessibilité
 - [x] Rapport « Jour » : phrase xDrip+ en page 1 et chapitre xDrip+ en page 3, conformes aux tests
+- [x] **Version 1.5.1** : Shizuku arrêté → notification « Shizuku est arrêté » à la ronde ; Shizuku
+      relancé → notification retirée, « Shizuku de nouveau disponible » au journal
+- [x] Shizuku lancé par USB **survit au débranchement du câble** (2 min 30 sans câble, même serveur)
+- [x] Démarrage de Shizuku **par débogage sans fil** : association réussie, mais **démarrage en
+      échec** sur ce téléphone (connexion coupée aussitôt, serveur arrêté) — voir [§13](#13-xdrip-et-shizuku)
 
 **Non vérifié, et signalé comme tel** :
 
@@ -830,7 +845,8 @@ Pile technique : Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle
 - [ ] Réparation de xDrip+ **par le service d'accessibilité** (sans Shizuku), y compris au déverrouillage
 - [ ] Panne « ne reçoit plus de glycémies » réelle (seuls l'arrêt forcé et l'accès retiré ont été provoqués)
 - [ ] Protections remises par Shizuku : aucune dérive constatée, la correction n'a donc jamais servi
-- [ ] Redémarrage automatique de Shizuku après un redémarrage du téléphone
+- [ ] Redémarrage automatique de Shizuku : **impossible sans root** avec la version officielle
+      (seule l'option « Lancer au démarrage (root) » existe) ; le rappel de Guardian la remplace
 - [ ] Rappel de l'alerte « aucun capteur connecté » toutes les 15 minutes (1.4) : impossible à tester
       sans couper le capteur du téléphone de boucle
 - [ ] Comportement sur plusieurs semaines (fuite mémoire, dérive de la batterie)
@@ -1287,8 +1303,17 @@ Installation:
 3. In CamAPS Guardian, **PERMISSIONS** panel, tap **Allow Shizuku**, then **Allow all the time**.
    The line becomes “Privileges: Shizuku”.
 
-> **Without root, Shizuku stops at every phone restart**: it has to be started again. Meanwhile the
-> button reads “Shizuku stopped” and Guardian falls back on the accessibility service and alerts.
+> **Without root, Shizuku stops at every phone restart**, and the official version (13.6.0) cannot
+> restart by itself without root. Once started, it keeps running even with the cable unplugged.
+> After a restart, **Guardian sends you a “Shizuku is stopped” notification** (then every 4 hours
+> while it is): tapping it opens Shizuku. It goes away by itself when Shizuku is back. Meanwhile,
+> Guardian falls back on the accessibility service and alerts.
+>
+> On the test phone (Hammer Iron 6 5G, Android 15), starting **through wireless debugging** fails:
+> the phone drops the connection and Shizuku's server dies with it. Only starting **from a computer**
+> (USB cable, `adb` command shown by Shizuku) works. Try wireless debugging on your phone first; if it
+> fails, use the computer.
+>
 > Shizuku gives Guardian adb rights: Guardian only uses the commands listed in
 > [§21](#21-controlling-bluetooth-in-layers), never `force-stop` or `pm clear`. Only keep wireless
 > debugging on over a network you trust.
@@ -1647,6 +1672,11 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
       rebound with no intervention → new reading received, “xDrip+ collecting again”
 - [x] Accessibility service bound (enabled through adb), no conflict with another accessibility service
 - [x] “Day” report: xDrip+ sentence on page 1 and xDrip+ chapter on page 3, matching the tests
+- [x] **Version 1.5.1**: Shizuku stopped → “Shizuku is stopped” notification on the round; Shizuku
+      started again → notification removed, “Shizuku available again” in the log
+- [x] Shizuku started over USB **survives unplugging the cable** (2 min 30 unplugged, same server)
+- [x] Starting Shizuku **through wireless debugging**: pairing succeeded, but **start failed** on this
+      phone (connection dropped at once, server stopped) — see [§13](#13-xdrip-and-shizuku)
 
 **Not verified, and reported as such**:
 
@@ -1657,7 +1687,8 @@ Tech stack: Kotlin 2.3, Jetpack Compose (BOM 2026.03.01), AGP 9.0.1, Gradle 9.1,
 - [ ] xDrip+ repair **through the accessibility service** (without Shizuku), including at unlock
 - [ ] A real “no longer receiving readings” outage (only force stop and removed access were provoked)
 - [ ] Protections restored through Shizuku: no drift seen, so the fix was never needed
-- [ ] Shizuku starting again by itself after a phone restart
+- [ ] Shizuku restarting by itself: **impossible without root** with the official version (only the
+      “Start on boot (root)” option exists); Guardian's reminder stands in for it
 - [ ] “No sensor connected” alert reminder every 15 minutes (1.4): cannot be tested without
       cutting the sensor off the loop phone
 - [ ] Behaviour over several weeks (memory leak, battery drift)
