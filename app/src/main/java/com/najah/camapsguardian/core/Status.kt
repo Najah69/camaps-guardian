@@ -40,6 +40,12 @@ data class Snap(
     val exactAlarms: Boolean = true,
     val root: Boolean = false,
     val shizuku: Boolean = false,
+    val shizukuRunning: Boolean = false,
+    val a11y: Boolean = false,
+    val xdripWatch: Boolean = true,
+    val xdrip: XState = XState.UNKNOWN,
+    val xdripEvidence: String = "",
+    val xdripRepairs: Int = 0,
     val lastCheck: Long = 0L,
     val nextCheck: Long = 0L,
     val checks: Int = 0,
@@ -61,6 +67,7 @@ object Status {
             val bt = BluetoothCtl(app)
             val cam = CamapsCtl(app)
             val battery = Sys.battery(app)
+            val xdrip = XdripCtl(app).evaluate(System.currentTimeMillis(), probe = null, deep = false)
             val presence =
                 if (p.targetList.isEmpty()) {
                     PresenceInfo(Presence.NO_TARGET, app.tr(R.string.ev_no_target))
@@ -97,6 +104,12 @@ object Status {
                 exactAlarms = Sys.canExactAlarms(app),
                 root = Shell.hasRoot(),
                 shizuku = Shell.hasShizuku(),
+                shizukuRunning = Shell.shizukuRunning(),
+                a11y = app.settingsFixerEnabled(),
+                xdripWatch = p.xdripWatch,
+                xdrip = xdrip.state,
+                xdripEvidence = xdrip.evidence,
+                xdripRepairs = p.xdripRepairs,
                 lastCheck = p.lastCheckAt,
                 nextCheck = p.nextCheckAt,
                 checks = p.checks,

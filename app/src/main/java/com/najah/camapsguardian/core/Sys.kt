@@ -59,12 +59,20 @@ object Sys {
     }
 
     fun hasNotifAccess(ctx: Context): Boolean {
-        val flat = try {
-            Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")
-        } catch (t: Throwable) {
-            null
-        } ?: return false
+        val flat = enabledListeners(ctx) ?: return false
         return flat.split(':').any { it.contains(ctx.packageName) }
+    }
+
+    private fun enabledListeners(ctx: Context): String? = try {
+        Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")
+    } catch (t: Throwable) {
+        null
+    }
+
+    /** L'écouteur donné (« paquet/classe ») est-il coché ? null si le réglage est illisible. */
+    fun listenerEnabled(ctx: Context, component: String): Boolean? {
+        val flat = enabledListeners(ctx) ?: return null
+        return flat.split(':').any { it == component }
     }
 
     fun hasNotifPermission(ctx: Context): Boolean =

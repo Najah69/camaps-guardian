@@ -1,5 +1,8 @@
 package com.najah.camapsguardian.core
 
+import android.app.Notification
+import android.content.ComponentName
+import android.content.Context
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.najah.camapsguardian.R
@@ -32,6 +35,16 @@ class PresenceListener : NotificationListenerService() {
             pkgs.mapNotNull { seen[it] }.maxOrNull() ?: 0L
 
         fun isConnected(): Boolean = connected
+
+        /**
+         * Demande à Android de rebrancher l'écouteur de Guardian (permis pour sa propre
+         * application) : après un arrêt forcé, Android peut l'oublier tout en le laissant coché.
+         */
+        fun rebind(ctx: Context) {
+            runCatching {
+                requestRebind(ComponentName(ctx, PresenceListener::class.java))
+            }
+        }
     }
 
     override fun onListenerConnected() {
@@ -48,13 +61,37 @@ class PresenceListener : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val now = System.currentTimeMillis()
         synchronized(active) { active.add(sbn.packageName) }
-        seen[sbn.packageName] = System.currentTimeMillis()
+        seen[sbn.packageName] = now
+        observe(sbn, now, posted = true)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         // On laisse l'ensemble se rafraîchir : une notification « ongoing » peut être republiée.
         seen[sbn.packageName] = System.currentTimeMillis()
+    }
+
+    /**
+     * Suivi de xDrip+ : sa notification permanente affiche la dernière glycémie (titre) et
+     * la variation (texte) ; celle de CamAPS FX est republiée à chaque nouvelle valeur du capteur.
+     */
+    private fun observe(sbn: StatusBarNotification, now: Long, posted: Boolean) {
+        try {
+            if (sbn.packageName == XdripWatch.PKG && sbn.isOngoing) {
+                val ex = sbn.notification.extras
+                val text = "${ex.getCharSequence(Notification.EXTRA_TITLE) ?: ""}|" +
+                    "${ex.getCharSequence(Notification.EXTRA_TEXT) ?: ""}"
+                if (text != "|") XdripWatch.onXdrip(text, now)
+            } else if (posted && sbn.isOngoing &&
+                (sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) == 0 &&
+                Prefs.get(this).value.targetList.contains(sbn.packageName)
+            ) {
+                XdripWatch.onCamaps(now)
+            }
+        } catch (t: Throwable) {
+            // une notification illisible ne doit rien casser
+        }
     }
 
     private fun refreshQuietly() {
@@ -68,6 +105,7 @@ class PresenceListener : NotificationListenerService() {
                     seen[it.packageName] = now
                 }
             }
+            list.forEach { observe(it, now, posted = false) }
         } catch (t: Throwable) {
             // pas encore connecté
         }

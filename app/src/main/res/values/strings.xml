@@ -32,8 +32,12 @@
     <string name="notif_low_battery_text">Monitoring continues, but plug the phone in: the CamAPS FX loop depends on it.</string>
     <string name="notif_allow_title">Allow the monitoring</string>
     <string name="notif_allow_text">Set the battery to “Unrestricted” for CamAPS Guardian, otherwise Android may stop the round.</string>
-    <string name="notif_no_sensor_title">No sensor connected (%1$s rounds)</string>
-    <string name="notif_no_sensor_text">Check the sensor and the transmitter: CamAPS Guardian cannot restore the link for you.</string>
+    <string name="notif_no_sensor_title">No sensor connected for %1$s</string>
+    <string name="notif_no_sensor_text">Check the sensor and the transmitter: CamAPS Guardian cannot restore the link for you. Alert #%1$s — reminder every %2$s min while the outage lasts.</string>
+    <string name="log_sensor_alert">“no sensor” alert #%1$s sent (outage for %2$s) — reminder at %3$s</string>
+    <string name="log_sensor_alert_muted">“no sensor” alert #%1$s sent (outage for %2$s) but Guardian’s notifications are turned off: it will not show — reminder at %3$s</string>
+    <string name="log_sensor_alert_failed">“no sensor” alert could not be shown — retrying at %1$s</string>
+    <string name="log_sensor_back">link back after %1$s: “no sensor” alert removed (%2$s sent)</string>
     <string name="notif_failed">notification failed: %1$s</string>
 
     <!-- ================================================================ screen -->
@@ -112,7 +116,7 @@
     <string name="ui_privileges_root">Privileges: root</string>
     <string name="ui_privileges_shizuku">Privileges: Shizuku</string>
     <string name="ui_privileges_none">Privileges: none (optional)</string>
-    <string name="ui_privileges_note">Without privileges, Android 13+ forbids turning Bluetooth back on programmatically: the app then shows a full-screen alert to tap. With root or Shizuku, it turns back on fully automatically.</string>
+    <string name="ui_privileges_note">Without privileges, Android 13+ forbids turning Bluetooth back on programmatically: the app then shows a full-screen alert to tap. With Shizuku (or root), Guardian turns Bluetooth back on, knows whether CamAPS FX and xDrip+ are really running, restores their protection against standby and rebinds xDrip+ immediately, even while the phone is locked. Without root, Shizuku must be started again after every phone restart.</string>
     <string name="ui_shizuku">Shizuku</string>
     <string name="ui_ok">OK</string>
     <string name="ui_open">Open</string>
@@ -371,5 +375,84 @@
     <string name="dur_min">%1$s min</string>
     <string name="dur_h">%1$s h %2$s</string>
     <string name="dur_d">%1$s d %2$s h</string>
+
+
+    <!-- 1.5 : xDrip+, Shizuku, accessibilité -->
+    <string name="cat_xdrip">xdrip</string>
+    <string name="xs_ok">collecting</string>
+    <string name="xs_stale">no longer receiving readings</string>
+    <string name="xs_unbound">notification listener unbound</string>
+    <string name="xs_revoked">notification access removed</string>
+    <string name="xs_dead">stopped</string>
+    <string name="xs_missing">not installed</string>
+    <string name="xs_unknown">unknown state</string>
+    <string name="ev_xdrip_missing">xDrip+ is not installed</string>
+    <string name="ev_xdrip_last">last new value %1$s</string>
+    <string name="ev_xdrip_updates">%1$s CamAPS update(s) since</string>
+    <string name="ev_xdrip_revoked">xDrip+ is no longer ticked in Notification access</string>
+    <string name="ev_xdrip_stopped">xDrip+ was force-stopped</string>
+    <string name="ev_xdrip_no_process">no xDrip+ process</string>
+    <string name="ev_xdrip_unbound">Android no longer delivers notifications to xDrip+</string>
+    <string name="ev_xdrip_no_notification">no xDrip+ notification</string>
+    <string name="ev_camaps_stopped">CamAPS FX was force-stopped (Shizuku)</string>
+    <string name="ev_camaps_no_process">no CamAPS FX process (Shizuku)</string>
+    <string name="ev_camaps_process">CamAPS FX process present (Shizuku)</string>
+    <string name="fix_launched">xDrip+ restarted</string>
+    <string name="fix_launch_failed">could not restart xDrip+</string>
+    <string name="fix_rebound">listener rebound via %1$s</string>
+    <string name="fix_rebind_failed">rebinding via %1$s refused (%2$s)</string>
+    <string name="fix_settings">fix started in Settings</string>
+    <string name="fix_wait_unlock">phone locked: fix in Settings at the next unlock</string>
+    <string name="fix_busy">fix already running in Settings</string>
+    <string name="fix_no_way">neither Shizuku nor the accessibility service: no automatic fix possible</string>
+    <string name="fix_sensor_off">no sensor connected: CamAPS has no value to pass on</string>
+    <string name="fix_deferred">repair already attempted shortly before</string>
+    <string name="fix_whitelist">battery whitelist restored</string>
+    <string name="fix_background">background allowed again</string>
+    <string name="fix_bucket">standby bucket %1$s → active</string>
+    <string name="log_protect">%1$s: %2$s</string>
+    <string name="fix_reason_intent">Settings page not found</string>
+    <string name="fix_reason_timeout">timed out (step %1$s)</string>
+    <string name="fix_reason_clicks">too many taps without result</string>
+    <string name="log_a11y_on">accessibility service active (xDrip+ repair through Settings)</string>
+    <string name="log_fix_unlock">phone unlocked: pending fix started</string>
+    <string name="log_fix_start">Settings: opening notification access for %1$s</string>
+    <string name="log_fix_done">Settings: notification access for %1$s unticked and ticked again</string>
+    <string name="log_fix_failed">Settings: fix for %1$s interrupted (%2$s)</string>
+    <string name="log_shizuku_granted">Shizuku permission granted</string>
+    <string name="log_shizuku_denied">Shizuku permission denied</string>
+    <string name="log_shizuku_not_running">Shizuku is not running</string>
+    <string name="log_shizuku_no_service">Shizuku service unavailable %1$s</string>
+    <string name="log_self_rebind">Guardian\'s listener unbound: rebind requested</string>
+    <string name="log_xdrip_back">xDrip+ collecting again (outage of %1$s, %2$s alert(s))</string>
+    <string name="log_xdrip_waiting">xDrip+ repaired, waiting for the next reading</string>
+    <string name="log_xdrip_state">xDrip+ %1$s (%2$s)</string>
+    <string name="log_xdrip_repair">xDrip+: %1$s</string>
+    <string name="log_xdrip_alert">xDrip+ alert no. %1$s sent (outage of %2$s)</string>
+    <string name="log_xdrip_alert_failed">xDrip+ alert not shown by Android</string>
+    <string name="log_force_stopped">%1$s force-stopped: checking in 20 s</string>
+    <string name="notif_xdrip_title">xDrip+ not collecting for %1$s</string>
+    <string name="notif_xdrip_text">xDrip+ %1$s. Guardian: %2$s. If it lasts, Settings ▸ Notifications ▸ Notification access: untick then tick xDrip+ again. (alert no. %3$s)</string>
+    <string name="a11y_label">CamAPS Guardian — xDrip+ repair</string>
+    <string name="a11y_description">Only used to rebind xDrip+\'s notification access when Android has dropped it and Shizuku is unavailable: Guardian opens that Settings page, unticks then ticks the switch again and goes back. The service only acts in Settings and reads no other app.</string>
+    <string name="ui_xdrip">xDrip+</string>
+    <string name="ui_xdrip_off">not monitored</string>
+    <string name="ui_xdrip_note">%1$s repair(s)</string>
+    <string name="ui_toggle_xdrip">Monitor and repair xDrip+</string>
+    <string name="ui_toggle_xdrip_sub">Checks every round that xDrip+ receives CamAPS FX readings. If it dropped out: restarts xDrip+ and rebinds its notification access (Shizuku, otherwise Settings at unlock), then alerts while it lasts.</string>
+    <string name="ui_perm_a11y">Accessibility (repair xDrip+ without Shizuku)</string>
+    <string name="ui_shizuku_allow">Allow Shizuku</string>
+    <string name="ui_shizuku_stopped">Shizuku stopped</string>
+
+    <string name="rep_a_xdrip_none">xDrip+: no monitoring data for this period (feature added in version 1.5, or xDrip+ monitoring turned off).</string>
+    <string name="rep_a_xdrip_ok">xDrip+ collected without interruption during the %1$s it was monitored.</string>
+    <string name="rep_a_xdrip_cuts">xDrip+ collected %1$s of the monitored time: %2$s outage(s), %3$s without collection in total, the longest lasting %4$s on %5$s. Guardian repaired it %6$s time(s).</string>
+    <string name="rep_xdrip_title">xDrip+ (“Companion App” source)</string>
+    <string name="rep_xdrip_row_observed">Time xDrip+ was monitored</string>
+    <string name="rep_xdrip_row_rate">Share of time xDrip+ was collecting</string>
+    <string name="rep_xdrip_row_down">Time without collection</string>
+    <string name="rep_xdrip_row_cuts">Collection outages</string>
+    <string name="rep_xdrip_row_fixes">Repairs by Guardian</string>
+    <string name="rep_xdrip_method">xDrip+ reads glucose values from the CamAPS FX notification. Every round, Guardian checks that it is installed, running, that its notification access is ticked and actually bound by Android (with Shizuku), and that its notification changes when CamAPS publishes new values. An outage is a run of rounds where xDrip+ was not collecting; it is counted apart from the outages above because it does not interrupt the insulin loop, only the follow-up (Nightscout, xDrip+ alerts). Readings missed during an outage are not recovered by xDrip+.</string>
 
 </resources>

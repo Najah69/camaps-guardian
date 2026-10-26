@@ -214,10 +214,29 @@ object ReportPdf {
         }
         if (a.boots > 0) out += ctx.tr(R.string.rep_a_boots, a.boots)
         out += ctx.tr(R.string.rep_a_actions, a.btFixes, a.relaunches, a.cycles, a.needsUser)
+        out += xdripFinding(ctx, a)
         if (a.batteryAvg >= 0) {
             out += ctx.tr(R.string.rep_a_battery, a.batteryAvg, a.batteryMin, duration(ctx, a.lowBattery))
         }
         return out
+    }
+
+    /** La phrase sur xDrip+, toujours présente : collecte, pannes, ou « pas encore surveillé ». */
+    private fun xdripFinding(ctx: Context, a: Analysis): String {
+        if (a.xdripObserved <= 0) return ctx.tr(R.string.rep_a_xdrip_none)
+        if (a.xdripEpisodes.isEmpty()) {
+            return ctx.tr(R.string.rep_a_xdrip_ok, duration(ctx, a.xdripObserved))
+        }
+        val longest = a.xdripEpisodes.maxBy { it.length }
+        return ctx.tr(
+            R.string.rep_a_xdrip_cuts,
+            pct(a.xdripRate),
+            a.xdripEpisodes.size,
+            duration(ctx, a.xdripDown),
+            duration(ctx, longest.length),
+            dateTime(longest.start),
+            a.xdripFixes
+        )
     }
 
     /**
@@ -479,6 +498,8 @@ object ReportPdf {
         }
         d.y += 16
 
+        xdripSection(ctx, d, a)
+
         d.ensure(120f)
         d.text(ctx.tr(R.string.rep_method_title), M, d.y, 12f, INK, bold = true)
         d.y += 6
@@ -486,6 +507,54 @@ object ReportPdf {
             ctx.tr(R.string.rep_method_text, duration(ctx, a.gapLimit), duration(ctx, Report.LONG_EPISODE), History.KEEP_DAYS),
             8f, INK2
         )
+    }
+
+    /** Chapitre xDrip+ (source « Companion App ») : chiffres, pannes, méthode. */
+    private fun xdripSection(ctx: Context, d: Doc, a: Analysis) {
+        d.ensure(150f)
+        d.text(ctx.tr(R.string.rep_xdrip_title), M, d.y, 12f, INK, bold = true)
+        d.y += 6
+        if (a.xdripObserved <= 0) {
+            d.paragraph(ctx.tr(R.string.rep_a_xdrip_none), 9f, INK2)
+            d.y += 16
+            return
+        }
+        d.y += 10
+        val rows = listOf(
+            ctx.tr(R.string.rep_xdrip_row_observed) to duration(ctx, a.xdripObserved),
+            ctx.tr(R.string.rep_xdrip_row_rate) to pct(a.xdripRate),
+            ctx.tr(R.string.rep_xdrip_row_down) to duration(ctx, a.xdripDown),
+            ctx.tr(R.string.rep_xdrip_row_cuts) to a.xdripEpisodes.size.toString(),
+            ctx.tr(R.string.rep_xdrip_row_fixes) to a.xdripFixes.toString()
+        )
+        rows.forEachIndexed { i, (k, v) ->
+            if (i % 2 == 0) d.rect(RectF(M, d.y - 10, W - M, d.y + 4), TILE)
+            d.text(k, M + 6, d.y, 9f, INK)
+            d.text(v, W - M - 6, d.y, 9f, INK, bold = true, alignRight = true)
+            d.y += 14
+        }
+        d.y += 8
+        val top = a.xdripEpisodes.sortedByDescending { it.length }.take(10)
+        if (top.isNotEmpty()) {
+            val cols = floatArrayOf(M + 6, M + 140, M + 274)
+            val heads = listOf(R.string.rep_col_start, R.string.rep_col_end, R.string.rep_col_length)
+            heads.forEachIndexed { i, id -> d.text(ctx.tr(id), cols[i], d.y, 8f, INK2, bold = true) }
+            d.y += 4
+            d.line(M, d.y, W - M, d.y, MUTED, 0.6f)
+            d.y += 11
+            for (e in top) {
+                d.ensure(14f)
+                d.text(dateTime(e.start), cols[0], d.y, 8.5f, INK)
+                d.text(dateTime(e.end), cols[1], d.y, 8.5f, INK)
+                d.text(duration(ctx, e.length), cols[2], d.y, 8.5f, INK, bold = true)
+                d.y += 13
+            }
+            val more = a.xdripEpisodes.size - top.size
+            if (more > 0) d.paragraph(ctx.tr(R.string.rep_episodes_more, more), 8f, INK2)
+            d.y += 4
+        }
+        d.paragraph(ctx.tr(R.string.rep_xdrip_method), 8f, INK2)
+        d.y += 16
     }
 
     // ================================================================ mise en page

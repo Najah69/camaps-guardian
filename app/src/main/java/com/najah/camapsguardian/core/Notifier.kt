@@ -21,6 +21,8 @@ object Notifier {
     const val ID_ALERT_BT = 1002
     const val ID_ALERT_APP = 1003
     const val ID_INFO = 1004
+    const val ID_ALERT_SENSOR = 1005
+    const val ID_ALERT_XDRIP = 1006
 
     fun ensureChannels(ctx: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -128,6 +130,55 @@ object Notifier {
         post(ctx, ID_ALERT_APP, n)
     }
 
+    /**
+     * Aucun appareil connecté : Guardian ne peut rien réparer, il ne peut que prévenir.
+     * Identifiant propre (les rappels de batterie ne l'écrasent pas), priorité haute et
+     * catégorie alarme, sans écran plein : le rappel revient tant que la coupure dure.
+     * Renvoie false si Android n'a pas pu l'afficher.
+     */
+    fun alertSensor(ctx: Context, title: String, text: String): Boolean {
+        val n = NotificationCompat.Builder(ctx, CH_ALERT)
+            .setSmallIcon(R.drawable.ic_stat_guardian)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(openApp(ctx))
+            .build()
+        return post(ctx, ID_ALERT_SENSOR, n)
+    }
+
+    /**
+     * xDrip+ ne collecte plus : identifiant propre, priorité haute, catégorie alarme, sans
+     * écran plein. Rappelée tant que la panne dure. Renvoie false si Android ne l'a pas affichée.
+     */
+    fun alertXdrip(ctx: Context, title: String, text: String): Boolean {
+        val n = NotificationCompat.Builder(ctx, CH_ALERT)
+            .setSmallIcon(R.drawable.ic_stat_guardian)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setContentIntent(openApp(ctx))
+            .build()
+        return post(ctx, ID_ALERT_XDRIP, n)
+    }
+
+    /** Les notifications de l'application sont-elles autorisées et le canal d'alerte actif ? */
+    fun alertsEnabled(ctx: Context): Boolean = try {
+        val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.areNotificationsEnabled() && (Build.VERSION.SDK_INT < 26 ||
+            nm.getNotificationChannel(CH_ALERT)?.importance != NotificationManager.IMPORTANCE_NONE)
+    } catch (t: Throwable) {
+        true
+    }
+
     fun info(ctx: Context, title: String, text: String) {
         val n = NotificationCompat.Builder(ctx, CH_ALERT)
             .setSmallIcon(R.drawable.ic_stat_guardian)
@@ -150,15 +201,16 @@ object Notifier {
         }
     }
 
-    private fun post(ctx: Context, id: Int, n: Notification) {
+    private fun post(ctx: Context, id: Int, n: Notification): Boolean =
         try {
             val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.notify(id, n)
+            true
         } catch (t: Throwable) {
             Logbook.add(
                 ctx.tr(R.string.cat_notif),
                 ctx.tr(R.string.notif_failed, t.javaClass.simpleName)
             )
+            false
         }
-    }
 }

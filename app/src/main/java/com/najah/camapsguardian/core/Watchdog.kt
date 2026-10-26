@@ -1,5 +1,6 @@
 package com.najah.camapsguardian.core
 
+import android.content.ComponentName
 import android.content.Context
 import com.najah.camapsguardian.R
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,18 @@ import kotlinx.coroutines.withContext
  * simplement au premier plan pour qu'il se reconnecte.
  */
 class Watchdog(private val ctx: Context) {
+
+    companion object {
+        /** Rondes muettes d'affilée avant la première alerte « aucun capteur ». */
+        const val SENSOR_ALERT_ROUNDS = 6
+        /** Intervalle de rappel tant que la coupure dure. */
+        const val SENSOR_REMINDER_MIN = 15
+        /** Délai minimal entre deux réparations de xDrip+, puis vérification après une réparation. */
+        const val XDRIP_REPAIR_MIN = 5
+        const val XDRIP_VERIFY_MIN = 6
+        /** Panne qui résiste aux réparations alors que xDrip+ tourne : on espace (cause ailleurs). */
+        const val XDRIP_SLOW_REPAIR_MIN = 30
+    }
 
     private val prefs: Prefs get() = Prefs.get(ctx)
 
@@ -44,8 +57,29 @@ class Watchdog(private val ctx: Context) {
             var deadStreak = p0.appDeadStreak
             var lossStreak = p0.btLossStreak
             var lastRecovery = p0.lastRecoveryAt
+            var sensorLostAt = p0.sensorLostAt
+            var sensorAlerts = p0.sensorAlerts
+            var lastSensorAlert = p0.lastSensorAlertAt
             var canRecover = manual ||
                 now - p0.lastRecoveryAt >= p0.recoverMinutes.coerceAtLeast(1) * 60_000L
+
+            // ---------------------------------------------------------- 0. Privilèges (Shizuku / root)
+            // Écouteur de Guardian : sans lui, CamAPS et xDrip+ deviennent invisibles.
+            if (!PresenceListener.isConnected() && Sys.hasNotifAccess(ctx)) {
+                notes += ctx.tr(R.string.log_self_rebind)
+                PresenceListener.rebind(ctx)
+                if (Shell.canElevate()) {
+                    Privileged.rebindListener(
+                        ComponentName(ctx, PresenceListener::class.java).flattenToString(), false
+                    )
+                }
+            }
+            val xd = XdripCtl(ctx)
+            val watchXdrip = p0.xdripWatch && xd.isInstalled()
+            val probes = Privileged.probe(
+                cam.installed() + listOfNotNull(XdripWatch.PKG.takeIf { watchXdrip }, ctx.packageName)
+            )
+            probes?.values?.forEach { st -> actions += Privileged.protect(ctx, st) }
 
             // ---------------------------------------------------------- 1. Bluetooth
             var btOn = bt.isOn()
@@ -79,7 +113,27 @@ class Watchdog(private val ctx: Context) {
             val bonded = bt.bondedDevices()
 
             // ---------------------------------------------------------- 3. CamAPS FX
-            val presence = cam.evaluate(now)
+            var presence = cam.evaluate(now)
+            // Avec Shizuku/root, on sait si le processus tourne : pas besoin d'attendre deux rondes.
+            var certain = false
+            val camProbe = (presence.pkg ?: cam.installed().firstOrNull())?.let { probes?.get(it) }
+            if (camProbe != null) {
+                if (camProbe.stopped == true || !camProbe.running) {
+                    certain = true
+                    presence = PresenceInfo(
+                        Presence.NOT_ALIVE,
+                        ctx.tr(
+                            if (camProbe.stopped == true) R.string.ev_camaps_stopped
+                            else R.string.ev_camaps_no_process
+                        ) + " · " + presence.evidence,
+                        camProbe.pkg
+                    )
+                } else if (presence.state == Presence.UNKNOWN) {
+                    presence = presence.copy(
+                        evidence = ctx.tr(R.string.ev_camaps_process) + " · " + presence.evidence
+                    )
+                }
+            }
             when (presence.state) {
                 Presence.ALIVE -> {
                     if (deadStreak > 0) {
@@ -99,7 +153,8 @@ class Watchdog(private val ctx: Context) {
                         presence.evidence
                     )
                     val target = presence.pkg ?: cam.installed().firstOrNull()
-                    if (p0.appAuto && deadStreak >= 2 && canRecover && target != null) {
+                    val needed = if (certain) 1 else 2
+                    if (p0.appAuto && deadStreak >= needed && canRecover && target != null) {
                         val how = cam.launch(target)
                         if (how == CamapsCtl.FAILED) {
                             actions += ctx.tr(R.string.log_camaps_relaunch_failed)
@@ -111,7 +166,7 @@ class Watchdog(private val ctx: Context) {
                             flags.append(History.F_RELAUNCH)
                             actions += ctx.tr(R.string.log_camaps_relaunched, how)
                         }
-                    } else if (p0.appAuto && deadStreak >= 2 && !canRecover) {
+                    } else if (p0.appAuto && deadStreak >= needed && !canRecover) {
                         actions += ctx.tr(R.string.log_camaps_relaunch_deferred)
                     }
                     if (deadStreak >= 3) {
@@ -161,11 +216,33 @@ class Watchdog(private val ctx: Context) {
                             actions += ctx.tr(R.string.log_camaps_relaunched_bt)
                         }
                     }
-                    if (lossStreak == 6) {
-                        Notifier.info(
+                    if (sensorLostAt == 0L) sensorLostAt = now
+                    // Première alerte après quelques rondes, puis rappel toutes les 15 min tant
+                    // que rien n'est reconnecté (une alerte déjà partie compte même si un cycle
+                    // Bluetooth a remis la série à zéro). Une minute de tolérance pour l'alarme.
+                    val due = if (sensorAlerts == 0) lossStreak >= SENSOR_ALERT_ROUNDS
+                    else now - lastSensorAlert >= (SENSOR_REMINDER_MIN - 1) * 60_000L
+                    if (due) {
+                        val lost = ReportPdf.duration(ctx, now - sensorLostAt)
+                        val shown = Notifier.alertSensor(
                             ctx,
-                            ctx.tr(R.string.notif_no_sensor_title, lossStreak),
-                            ctx.tr(R.string.notif_no_sensor_text)
+                            ctx.tr(R.string.notif_no_sensor_title, lost),
+                            ctx.tr(R.string.notif_no_sensor_text, sensorAlerts + 1, SENSOR_REMINDER_MIN)
+                        )
+                        val next = now + SENSOR_REMINDER_MIN * 60_000L
+                        Alarms.scheduleSensorReminder(ctx, next)
+                        if (shown) {
+                            sensorAlerts++
+                            lastSensorAlert = now
+                        }
+                        Logbook.add(
+                            ctx.tr(R.string.cat_notif),
+                            when {
+                                !shown -> ctx.tr(R.string.log_sensor_alert_failed, Fmt.time(next))
+                                !Notifier.alertsEnabled(ctx) ->
+                                    ctx.tr(R.string.log_sensor_alert_muted, sensorAlerts, lost, Fmt.time(next))
+                                else -> ctx.tr(R.string.log_sensor_alert, sensorAlerts, lost, Fmt.time(next))
+                            }
                         )
                     }
                     if (p0.aggressiveCycle && lossStreak >= 4 && canRecover) {
@@ -181,6 +258,125 @@ class Watchdog(private val ctx: Context) {
                 } else if (count > 0) {
                     lossStreak = 0
                     Notifier.cancel(ctx, Notifier.ID_ALERT_BT)
+                    if (sensorLostAt != 0L) {
+                        if (sensorAlerts > 0) {
+                            Logbook.add(
+                                ctx.tr(R.string.cat_notif),
+                                ctx.tr(
+                                    R.string.log_sensor_back,
+                                    ReportPdf.duration(ctx, now - sensorLostAt),
+                                    sensorAlerts
+                                )
+                            )
+                        }
+                        Notifier.cancel(ctx, Notifier.ID_ALERT_SENSOR)
+                        Alarms.cancelSensorReminder(ctx)
+                        sensorLostAt = 0L
+                        sensorAlerts = 0
+                    }
+                }
+            }
+
+            // ---------------------------------------------------------- 4 bis. xDrip+
+            var xdripBadSince = p0.xdripBadSince
+            var xdripStreak = p0.xdripStreak
+            var xdripAlerts = p0.xdripAlerts
+            var lastXdripAlert = p0.lastXdripAlertAt
+            var lastXdripRepair = p0.lastXdripRepairAt
+            var xdripRepairs = p0.xdripRepairs
+            if (!watchXdrip && xdripBadSince != 0L) {
+                Notifier.cancel(ctx, Notifier.ID_ALERT_XDRIP)
+                Alarms.cancelXdripCheck(ctx)
+                xdripBadSince = 0L
+                xdripStreak = 0
+                xdripAlerts = 0
+            }
+            if (watchXdrip) {
+                val xi = xd.evaluate(now, probes?.get(XdripWatch.PKG))
+                when (xi.state) {
+                    XState.OK -> {
+                        xdripStreak = 0
+                        flags.append(History.F_XDRIP_OK)
+                        if (xdripBadSince != 0L) {
+                            // Réparé seulement quand une nouvelle glycémie est vraiment arrivée.
+                            if (XdripWatch.changedAt > xdripBadSince) {
+                                Logbook.add(
+                                    ctx.tr(R.string.cat_xdrip),
+                                    ctx.tr(
+                                        R.string.log_xdrip_back,
+                                        ReportPdf.duration(ctx, now - xdripBadSince),
+                                        xdripAlerts
+                                    )
+                                )
+                                Notifier.cancel(ctx, Notifier.ID_ALERT_XDRIP)
+                                Alarms.cancelXdripCheck(ctx)
+                                xdripBadSince = 0L
+                                xdripAlerts = 0
+                            } else {
+                                notes += ctx.tr(R.string.log_xdrip_waiting)
+                                Alarms.scheduleXdripCheck(ctx, now + XDRIP_VERIFY_MIN * 60_000L)
+                            }
+                        }
+                    }
+                    XState.MISSING, XState.UNKNOWN -> {
+                        notes += ctx.tr(R.string.log_xdrip_state, ctx.xLabel(xi.state), xi.evidence)
+                    }
+                    else -> {
+                        if (xdripBadSince == 0L) xdripBadSince = now
+                        xdripStreak++
+                        flags.append(History.F_XDRIP)
+                        notes += ctx.tr(R.string.log_xdrip_state, ctx.xLabel(xi.state), xi.evidence)
+                        // Sans capteur connecté, CamAPS n'a pas de valeur à transmettre : xDrip+ n'y est pour rien.
+                        val sensorOff = xi.state == XState.STALE && lossStreak > 0
+                        // Seule la panne déduite (STALE) est espacée : un arrêt forcé, un accès retiré
+                        // ou un écouteur débranché sont constatés, on répare tout de suite (une minute
+                        // d'écart seulement, contre les boucles).
+                        val spacingMs = when {
+                            xi.state != XState.STALE -> 60_000L
+                            xdripStreak > 2 -> XDRIP_SLOW_REPAIR_MIN * 60_000L - 30_000L
+                            else -> XDRIP_REPAIR_MIN * 60_000L - 30_000L
+                        }
+                        var fixed = false
+                        val how: String
+                        if (sensorOff) {
+                            how = ctx.tr(R.string.fix_sensor_off)
+                        } else if (manual || now - lastXdripRepair >= spacingMs) {
+                            val fix = xd.repair(xi.state, now)
+                            fixed = fix.done
+                            how = fix.how
+                            if (fix.done) {
+                                lastXdripRepair = now
+                                xdripRepairs++
+                                flags.append(History.F_XDRIP_FIX)
+                            }
+                            actions += ctx.tr(R.string.log_xdrip_repair, fix.how)
+                        } else {
+                            how = ctx.tr(R.string.fix_deferred)
+                        }
+                        // Alerte tout de suite si rien n'a pu être réparé, sinon si la panne survit
+                        // à une réparation ; puis rappel toutes les 15 min tant qu'elle dure.
+                        val due = (!fixed || xdripStreak >= 2) &&
+                            (xdripAlerts == 0 || now - lastXdripAlert >= (SENSOR_REMINDER_MIN - 1) * 60_000L)
+                        if (due) {
+                            val lost = ReportPdf.duration(ctx, now - xdripBadSince)
+                            val shown = Notifier.alertXdrip(
+                                ctx,
+                                ctx.tr(R.string.notif_xdrip_title, lost),
+                                ctx.tr(R.string.notif_xdrip_text, ctx.xLabel(xi.state), how, xdripAlerts + 1)
+                            )
+                            if (shown) {
+                                xdripAlerts++
+                                lastXdripAlert = now
+                            }
+                            Logbook.add(
+                                ctx.tr(R.string.cat_notif),
+                                if (shown) ctx.tr(R.string.log_xdrip_alert, xdripAlerts, lost)
+                                else ctx.tr(R.string.log_xdrip_alert_failed)
+                            )
+                        }
+                        val next = if (fixed) XDRIP_VERIFY_MIN else SENSOR_REMINDER_MIN
+                        Alarms.scheduleXdripCheck(ctx, now + next * 60_000L)
+                    }
                 }
             }
 
@@ -223,6 +419,15 @@ class Watchdog(private val ctx: Context) {
                     relaunches = relaunches,
                     appDeadStreak = deadStreak,
                     btLossStreak = lossStreak,
+                    sensorLostAt = sensorLostAt,
+                    sensorAlerts = sensorAlerts,
+                    lastSensorAlertAt = lastSensorAlert,
+                    xdripBadSince = xdripBadSince,
+                    xdripStreak = xdripStreak,
+                    xdripAlerts = xdripAlerts,
+                    lastXdripAlertAt = lastXdripAlert,
+                    lastXdripRepairAt = lastXdripRepair,
+                    xdripRepairs = xdripRepairs,
                     lastRecoveryAt = lastRecovery,
                     lastSummary = summary
                 )

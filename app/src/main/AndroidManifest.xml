@@ -33,6 +33,8 @@
         <package android:name="com.camdiab.fx.alert.mgdl" />
         <package android:name="com.camdiab.fx.alert" />
         <package android:name="com.camdiab.fx" />
+        <package android:name="com.eveningoutpost.dexdrip" />
+        <package android:name="moe.shizuku.privileged.api" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -97,6 +99,29 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Réparation de xDrip+ sans Shizuku : décoche / recoche son accès aux notifications -->
+        <service
+            android:name=".core.SettingsFixer"
+            android:exported="true"
+            android:label="@string/a11y_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/settings_fixer" />
+        </service>
+
+        <!-- Shizuku transmet ses droits (ceux d'adb) par ce fournisseur -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <receiver
             android:name=".core.WakeReceiver"

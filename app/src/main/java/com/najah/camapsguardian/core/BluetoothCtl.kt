@@ -18,7 +18,7 @@ enum class BtEnable { ON, ENABLED, NEEDS_USER, FAILED }
  * Trois stratégies, dans l'ordre :
  *  1. BluetoothAdapter.enable() — fonctionne si l'application ne cible pas Android 13+
  *     (d'où targetSdk 32) ;
- *  2. commande système via root ou Shizuku ;
+ *  2. commande système via root ou Shizuku (droits d'adb : toujours honorée) ;
  *  3. sinon : notification plein écran qui demande l'accord de l'utilisateur.
  */
 class BluetoothCtl(private val ctx: Context) {
@@ -103,15 +103,36 @@ class BluetoothCtl(private val ctx: Context) {
     suspend fun cycle(): Boolean = withContext(Dispatchers.IO) {
         val a = adapter ?: return@withContext false
         Logbook.add(ctx.tr(R.string.cat_bt), ctx.tr(R.string.log_bt_cycle_requested))
-        try {
+        // Android 13+ refuse disable() sans lever d'exception : on vérifie, puis Shizuku/root.
+        val off = try {
             a.disable()
         } catch (t: Throwable) {
-            Shell.runPrivileged("cmd bluetooth_manager disable")
+            false
+        }
+        if (!off || !waitOff(3000L)) {
+            val r = Shell.runPrivileged("cmd bluetooth_manager disable")
+            Logbook.add(
+                ctx.tr(R.string.cat_bt),
+                ctx.tr(
+                    if (r.ok) R.string.log_bt_cmd_ok else R.string.log_bt_cmd_refused,
+                    "cmd bluetooth_manager disable", r.how, r.output.take(60)
+                )
+            )
+            waitOff(4000L)
         }
         SystemClock.sleep(2500L)
         val r = ensureOn(15_000L)
         Logbook.add(ctx.tr(R.string.cat_bt), ctx.tr(R.string.log_bt_cycle_done, r.name))
         r == BtEnable.ENABLED || r == BtEnable.ON
+    }
+
+    private fun waitOff(ms: Long): Boolean {
+        val end = SystemClock.elapsedRealtime() + ms
+        while (SystemClock.elapsedRealtime() < end) {
+            if (!isOn()) return true
+            SystemClock.sleep(250L)
+        }
+        return !isOn()
     }
 
     private fun waitOn(ms: Long): Boolean {

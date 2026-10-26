@@ -60,7 +60,9 @@ import com.najah.camapsguardian.core.ReportPdf
 import com.najah.camapsguardian.core.Shell
 import com.najah.camapsguardian.core.Snap
 import com.najah.camapsguardian.core.Status
+import com.najah.camapsguardian.core.XState
 import com.najah.camapsguardian.core.tr
+import com.najah.camapsguardian.core.xLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -305,6 +307,20 @@ private fun StatusPanel(snap: Snap) {
             },
             note = snap.presenceEvidence.take(110)
         )
+        if (snap.xdrip != XState.MISSING) {
+            KeyLine(
+                label = stringResource(R.string.ui_xdrip),
+                value = if (snap.xdripWatch) ctx.xLabel(snap.xdrip) else stringResource(R.string.ui_xdrip_off),
+                color = when {
+                    !snap.xdripWatch -> Dim
+                    snap.xdrip == XState.OK -> Ok
+                    snap.xdrip == XState.UNKNOWN -> Warn
+                    else -> Bad
+                },
+                note = stringResource(R.string.ui_xdrip_note, snap.xdripRepairs) +
+                    if (snap.xdripEvidence.isNotBlank()) " · " + snap.xdripEvidence.take(90) else ""
+            )
+        }
         KeyLine(
             label = stringResource(R.string.ui_round),
             value = stringResource(
@@ -438,6 +454,15 @@ private fun RecoveryPanel(ctx: Context, snap: Snap) {
             }
         )
         ToggleLine(
+            title = stringResource(R.string.ui_toggle_xdrip),
+            subtitle = stringResource(R.string.ui_toggle_xdrip_sub),
+            checked = snap.xdripWatch,
+            onChange = { value ->
+                Control.setFlag(ctx) { p -> p.copy(xdripWatch = value) }
+                Status.refresh(ctx)
+            }
+        )
+        ToggleLine(
             title = stringResource(R.string.ui_toggle_cycle),
             subtitle = stringResource(R.string.ui_toggle_cycle_sub),
             checked = snap.aggressiveCycle,
@@ -506,6 +531,11 @@ private fun PermissionPanel(ctx: Context, snap: Snap) {
             ok = snap.btPerm,
             onOpen = { openAppDetails(ctx) }
         )
+        PermLine(
+            title = stringResource(R.string.ui_perm_a11y),
+            ok = snap.a11y,
+            onOpen = { launch(ctx, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+        )
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -522,7 +552,14 @@ private fun PermissionPanel(ctx: Context, snap: Snap) {
                 TextButton(onClick = {
                     Shell.requestShizukuPermission()
                     Status.refresh(ctx)
-                }) { Text(stringResource(R.string.ui_shizuku), fontSize = 11.sp) }
+                }) {
+                    Text(
+                        stringResource(
+                            if (snap.shizukuRunning) R.string.ui_shizuku_allow else R.string.ui_shizuku_stopped
+                        ),
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
         Text(

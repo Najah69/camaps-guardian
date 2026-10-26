@@ -66,6 +66,7 @@ class WatchdogService : Service() {
     private var work: Job? = null
     private var lock: PowerManager.WakeLock? = null
     private var events: BroadcastReceiver? = null
+    private var restarts: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -219,6 +220,34 @@ class WatchdogService : Service() {
                 tr(R.string.log_receiver_failed, t.message ?: "")
             )
         }
+
+        // Arrêt forcé de CamAPS FX ou de xDrip+ : on n'attend pas la ronde suivante.
+        val stopped = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, i: Intent) {
+                val pkg = i.data?.schemeSpecificPart ?: return
+                val p = Prefs.get(applicationContext).value
+                if (!p.enabled) return
+                val watched = p.targetList.contains(pkg) ||
+                    (p.xdripWatch && pkg == XdripWatch.PKG)
+                if (!watched) return
+                Logbook.add(tr(R.string.cat_event), tr(R.string.log_force_stopped, pkg))
+                scope.launch {
+                    // Laisser le système finir l'arrêt avant de regarder.
+                    delay(20_000L)
+                    tick(tr(R.string.log_event, "PACKAGE_RESTARTED"))
+                }
+            }
+        }
+        try {
+            val f = IntentFilter(Intent.ACTION_PACKAGE_RESTARTED).apply { addDataScheme("package") }
+            ContextCompat.registerReceiver(this, stopped, f, ContextCompat.RECEIVER_EXPORTED)
+            restarts = stopped
+        } catch (t: Throwable) {
+            Logbook.add(
+                tr(R.string.cat_service),
+                tr(R.string.log_receiver_failed, t.message ?: "")
+            )
+        }
     }
 
     private fun wakeLock(): PowerManager.WakeLock {
@@ -246,6 +275,8 @@ class WatchdogService : Service() {
         running = false
         events?.let { runCatching { unregisterReceiver(it) } }
         events = null
+        restarts?.let { runCatching { unregisterReceiver(it) } }
+        restarts = null
         val p = Prefs.get(this).value
         if (p.enabled) {
             Logbook.add(tr(R.string.cat_service), tr(R.string.log_service_destroyed))

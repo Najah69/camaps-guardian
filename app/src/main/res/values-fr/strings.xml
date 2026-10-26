@@ -32,8 +32,12 @@
     <string name="notif_low_battery_text">La surveillance continue, mais branchez le téléphone : la boucle CamAPS FX en dépend.</string>
     <string name="notif_allow_title">Autorisez la surveillance</string>
     <string name="notif_allow_text">Réglez la batterie sur « Sans restriction » pour CamAPS Guardian, sinon Android peut arrêter la ronde.</string>
-    <string name="notif_no_sensor_title">Aucun capteur connecté (%1$s rondes)</string>
-    <string name="notif_no_sensor_text">Vérifiez le capteur et le transmetteur : CamAPS Guardian ne peut pas rétablir la liaison à votre place.</string>
+    <string name="notif_no_sensor_title">Aucun capteur connecté depuis %1$s</string>
+    <string name="notif_no_sensor_text">Vérifiez le capteur et le transmetteur : CamAPS Guardian ne peut pas rétablir la liaison à votre place. Alerte n° %1$s — rappel toutes les %2$s min tant que la coupure dure.</string>
+    <string name="log_sensor_alert">alerte « aucun capteur » n° %1$s envoyée (coupure depuis %2$s) — rappel à %3$s</string>
+    <string name="log_sensor_alert_muted">alerte « aucun capteur » n° %1$s envoyée (coupure depuis %2$s) mais les notifications de Guardian sont désactivées : elle ne s’affichera pas — rappel à %3$s</string>
+    <string name="log_sensor_alert_failed">alerte « aucun capteur » impossible à afficher — nouvel essai à %1$s</string>
+    <string name="log_sensor_back">liaison rétablie après %1$s : alerte « aucun capteur » retirée (%2$s envoyée(s))</string>
     <string name="notif_failed">notification impossible : %1$s</string>
 
     <!-- ================================================================ écran -->
@@ -112,7 +116,7 @@
     <string name="ui_privileges_root">Privilèges : root</string>
     <string name="ui_privileges_shizuku">Privilèges : Shizuku</string>
     <string name="ui_privileges_none">Privilèges : aucun (facultatif)</string>
-    <string name="ui_privileges_note">Sans privilège, Android 13+ interdit de rallumer le Bluetooth par programme : l\'application affiche alors une alerte plein écran à toucher. Avec root ou Shizuku, le rallumage est totalement automatique.</string>
+    <string name="ui_privileges_note">Sans privilège, Android 13+ interdit de rallumer le Bluetooth par programme : l\'application affiche alors une alerte plein écran à toucher. Avec Shizuku (ou root), Guardian rallume le Bluetooth, sait si CamAPS FX et xDrip+ tournent vraiment, remet leurs protections contre la mise en veille et rebranche xDrip+ immédiatement, même téléphone verrouillé. Sans root, Shizuku est à redémarrer après chaque redémarrage du téléphone.</string>
     <string name="ui_shizuku">Shizuku</string>
     <string name="ui_ok">OK</string>
     <string name="ui_open">Ouvrir</string>
@@ -371,5 +375,84 @@
     <string name="dur_min">%1$s min</string>
     <string name="dur_h">%1$s h %2$s</string>
     <string name="dur_d">%1$s j %2$s h</string>
+
+
+    <!-- 1.5 : xDrip+, Shizuku, accessibilité -->
+    <string name="cat_xdrip">xdrip</string>
+    <string name="xs_ok">collecte</string>
+    <string name="xs_stale">ne reçoit plus de glycémies</string>
+    <string name="xs_unbound">écouteur de notifications débranché</string>
+    <string name="xs_revoked">accès aux notifications retiré</string>
+    <string name="xs_dead">arrêté</string>
+    <string name="xs_missing">non installé</string>
+    <string name="xs_unknown">état inconnu</string>
+    <string name="ev_xdrip_missing">xDrip+ n\'est pas installé</string>
+    <string name="ev_xdrip_last">dernière nouvelle valeur %1$s</string>
+    <string name="ev_xdrip_updates">%1$s mise(s) à jour de CamAPS depuis</string>
+    <string name="ev_xdrip_revoked">xDrip+ n\'est plus coché dans « Accès aux notifications »</string>
+    <string name="ev_xdrip_stopped">xDrip+ a été arrêté de force</string>
+    <string name="ev_xdrip_no_process">aucun processus xDrip+</string>
+    <string name="ev_xdrip_unbound">Android ne transmet plus les notifications à xDrip+</string>
+    <string name="ev_xdrip_no_notification">pas de notification xDrip+</string>
+    <string name="ev_camaps_stopped">CamAPS FX a été arrêté de force (Shizuku)</string>
+    <string name="ev_camaps_no_process">aucun processus CamAPS FX (Shizuku)</string>
+    <string name="ev_camaps_process">processus CamAPS FX présent (Shizuku)</string>
+    <string name="fix_launched">xDrip+ relancé</string>
+    <string name="fix_launch_failed">relance de xDrip+ impossible</string>
+    <string name="fix_rebound">écouteur rebranché via %1$s</string>
+    <string name="fix_rebind_failed">rebranchement via %1$s refusé (%2$s)</string>
+    <string name="fix_settings">correction lancée dans les Réglages</string>
+    <string name="fix_wait_unlock">téléphone verrouillé : correction dans les Réglages au prochain déverrouillage</string>
+    <string name="fix_busy">correction déjà en cours dans les Réglages</string>
+    <string name="fix_no_way">ni Shizuku ni service d\'accessibilité : correction automatique impossible</string>
+    <string name="fix_sensor_off">aucun capteur connecté : CamAPS n\'a pas de valeur à transmettre</string>
+    <string name="fix_deferred">réparation déjà tentée il y a peu</string>
+    <string name="fix_whitelist">liste blanche batterie remise</string>
+    <string name="fix_background">arrière-plan réautorisé</string>
+    <string name="fix_bucket">catégorie de veille %1$s → active</string>
+    <string name="log_protect">%1$s : %2$s</string>
+    <string name="fix_reason_intent">page des Réglages introuvable</string>
+    <string name="fix_reason_timeout">délai dépassé (étape %1$s)</string>
+    <string name="fix_reason_clicks">trop d\'appuis sans résultat</string>
+    <string name="log_a11y_on">service d\'accessibilité actif (réparation de xDrip+ par les Réglages)</string>
+    <string name="log_fix_unlock">téléphone déverrouillé : correction en attente lancée</string>
+    <string name="log_fix_start">Réglages : ouverture de l\'accès aux notifications de %1$s</string>
+    <string name="log_fix_done">Réglages : accès aux notifications de %1$s décoché puis recoché</string>
+    <string name="log_fix_failed">Réglages : correction de %1$s interrompue (%2$s)</string>
+    <string name="log_shizuku_granted">autorisation Shizuku accordée</string>
+    <string name="log_shizuku_denied">autorisation Shizuku refusée</string>
+    <string name="log_shizuku_not_running">Shizuku n\'est pas démarré</string>
+    <string name="log_shizuku_no_service">service Shizuku indisponible %1$s</string>
+    <string name="log_self_rebind">écouteur de Guardian débranché : rebranchement demandé</string>
+    <string name="log_xdrip_back">xDrip+ collecte de nouveau (panne de %1$s, %2$s alerte(s))</string>
+    <string name="log_xdrip_waiting">xDrip+ réparé, en attente de la prochaine glycémie</string>
+    <string name="log_xdrip_state">xDrip+ %1$s (%2$s)</string>
+    <string name="log_xdrip_repair">xDrip+ : %1$s</string>
+    <string name="log_xdrip_alert">alerte xDrip+ n° %1$s envoyée (panne de %2$s)</string>
+    <string name="log_xdrip_alert_failed">alerte xDrip+ non affichée par Android</string>
+    <string name="log_force_stopped">%1$s arrêté de force : vérification dans 20 s</string>
+    <string name="notif_xdrip_title">xDrip+ ne collecte plus depuis %1$s</string>
+    <string name="notif_xdrip_text">xDrip+ %1$s. Guardian : %2$s. Si cela dure, Réglages ▸ Notifications ▸ Accès aux notifications : décochez puis recochez xDrip+. (alerte n° %3$s)</string>
+    <string name="a11y_label">CamAPS Guardian — réparation de xDrip+</string>
+    <string name="a11y_description">Sert uniquement à rebrancher l\'accès aux notifications de xDrip+ quand Android l\'a débranché et que Shizuku n\'est pas disponible : Guardian ouvre la page des Réglages concernée, décoche puis recoche l\'interrupteur et revient. Le service n\'agit que dans les Réglages et ne lit aucune autre application.</string>
+    <string name="ui_xdrip">xDrip+</string>
+    <string name="ui_xdrip_off">non surveillé</string>
+    <string name="ui_xdrip_note">%1$s réparation(s)</string>
+    <string name="ui_toggle_xdrip">Surveiller et réparer xDrip+</string>
+    <string name="ui_toggle_xdrip_sub">Vérifie à chaque ronde que xDrip+ reçoit les glycémies de CamAPS FX. S\'il a décroché : relance xDrip+ et rebranche son accès aux notifications (Shizuku, sinon Réglages au déverrouillage), puis alerte tant que ça dure.</string>
+    <string name="ui_perm_a11y">Accessibilité (réparer xDrip+ sans Shizuku)</string>
+    <string name="ui_shizuku_allow">Autoriser Shizuku</string>
+    <string name="ui_shizuku_stopped">Shizuku arrêté</string>
+
+    <string name="rep_a_xdrip_none">xDrip+ : pas de données de surveillance sur cette période (fonction ajoutée dans la version 1.5, ou surveillance de xDrip+ désactivée).</string>
+    <string name="rep_a_xdrip_ok">xDrip+ a collecté sans interruption pendant les %1$s où il était surveillé.</string>
+    <string name="rep_a_xdrip_cuts">xDrip+ a collecté %1$s du temps surveillé : %2$s panne(s), %3$s sans collecte au total, la plus longue de %4$s le %5$s. Guardian l’a réparé %6$s fois.</string>
+    <string name="rep_xdrip_title">xDrip+ (source « Companion App »)</string>
+    <string name="rep_xdrip_row_observed">Temps où xDrip+ était surveillé</string>
+    <string name="rep_xdrip_row_rate">Part du temps où xDrip+ collectait</string>
+    <string name="rep_xdrip_row_down">Temps sans collecte</string>
+    <string name="rep_xdrip_row_cuts">Pannes de collecte</string>
+    <string name="rep_xdrip_row_fixes">Réparations par Guardian</string>
+    <string name="rep_xdrip_method">xDrip+ lit les glycémies dans la notification de CamAPS FX. À chaque ronde, Guardian vérifie qu’il est installé, qu’il tourne, que son accès aux notifications est coché et réellement branché par Android (avec Shizuku), et que sa notification change quand CamAPS publie de nouvelles valeurs. Une panne est une suite de rondes où xDrip+ ne collectait pas ; elle compte à part des coupures ci-dessus car elle n’interrompt pas la boucle d’insuline, seulement le suivi (Nightscout, alertes xDrip+). Les glycémies manquées pendant une panne ne sont pas récupérées par xDrip+.</string>
 
 </resources>

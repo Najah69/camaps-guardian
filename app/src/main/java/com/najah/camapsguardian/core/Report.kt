@@ -47,8 +47,15 @@ class Analysis(
     val lowBattery: Long,
     val battery: List<Pair<Long, Int>>,
     val gapLimit: Long,
-    val previousOk: Double?
+    val previousOk: Double?,
+    /** xDrip+ : temps surveillé, temps sans collecte, pannes et réparations (rondes de la 1.5 et après). */
+    val xdripObserved: Long = 0L,
+    val xdripDown: Long = 0L,
+    val xdripEpisodes: List<Episode> = emptyList(),
+    val xdripFixes: Int = 0
 ) {
+    /** Part du temps surveillé où xDrip+ collectait. */
+    val xdripRate: Double get() = if (xdripObserved <= 0) 0.0 else 1.0 - xdripDown.toDouble() / xdripObserved
     val span: Long get() = time.sum()
     val observed: Long get() = span - time[Cat.UNMONITORED.ordinal]
     fun share(c: Cat): Double = if (span <= 0) 0.0 else time[c.ordinal].toDouble() / span
@@ -172,6 +179,26 @@ object Report {
         segmentsOf(inRange, from, to, gap) { r, s, e ->
             if (r.battery in 0..14 && r.charging != 1) low += e - s
         }
+
+        // xDrip+ : à part des catégories ci-dessus, sa panne ne coupe pas la boucle d'insuline.
+        val boots = data.events.filter { it.type == History.EV_BOOT }.map { it.at }
+        var xObserved = 0L
+        var xDown = 0L
+        val xEpisodes = ArrayList<Episode>()
+        var xOpen: Episode? = null
+        segmentsOf(inRange, from, to, gap, boots) { r, s, e ->
+            val bad = History.F_XDRIP in r.flags
+            val ok = History.F_XDRIP_OK in r.flags
+            if (bad || ok) xObserved += e - s
+            if (bad) {
+                xDown += e - s
+                xOpen = xOpen?.copy(end = e) ?: Episode(s, e, Cat.UNCERTAIN)
+            } else if (ok) {
+                xOpen?.let { xEpisodes += it }
+                xOpen = null
+            }
+        }
+        xOpen?.let { xEpisodes += it }
         return Analysis(
             period = period,
             from = from,
@@ -193,7 +220,11 @@ object Report {
             lowBattery = low,
             battery = bat.map { it.at to it.battery },
             gapLimit = gap,
-            previousOk = previousOk
+            previousOk = previousOk,
+            xdripObserved = xObserved,
+            xdripDown = xDown,
+            xdripEpisodes = xEpisodes,
+            xdripFixes = inRange.count { History.F_XDRIP_FIX in it.flags }
         )
     }
 

@@ -16,7 +16,7 @@ import java.util.Calendar
  * - `R;horodatage;bt;appareils;présence;batterie;secteur;drapeaux` — une ronde.
  *   `bt` : 1 actif, 0 éteint, -1 pas de Bluetooth ; `appareils` -1 si inconnu ;
  *   `secteur` 1/0, -1 inconnu ; drapeaux : [F_BT_FIX] [F_NEEDS_USER] [F_RELAUNCH]
- *   [F_CYCLE] [F_MANUAL].
+ *   [F_CYCLE] [F_MANUAL] [F_XDRIP] [F_XDRIP_OK] [F_XDRIP_FIX].
  * - `E;horodatage;type` — un événement ([EV_BOOT], [EV_ON], [EV_OFF]).
  */
 object History {
@@ -29,6 +29,12 @@ object History {
     const val F_RELAUNCH = 'L'
     const val F_CYCLE = 'C'
     const val F_MANUAL = 'M'
+    /** xDrip+ ne collectait plus pendant cette ronde. */
+    const val F_XDRIP = 'X'
+    /** xDrip+ surveillé et collectait (permet de distinguer « collecte » de « non surveillé »). */
+    const val F_XDRIP_OK = 'x'
+    /** Guardian a réparé xDrip+ pendant cette ronde (relance, écouteur rebranché…). */
+    const val F_XDRIP_FIX = 'Y'
 
     const val EV_BOOT = "BOOT"
     const val EV_ON = "ON"

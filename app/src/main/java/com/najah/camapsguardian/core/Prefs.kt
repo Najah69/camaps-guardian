@@ -27,6 +27,21 @@ data class P(
     val lastHintAt: Long = 0L,
     val btLossStreak: Int = 0,
     val appDeadStreak: Int = 0,
+    /** Début de la coupure en cours (aucun appareil connecté), 0 sinon. */
+    val sensorLostAt: Long = 0L,
+    /** Alertes « aucun capteur » envoyées pendant la coupure en cours. */
+    val sensorAlerts: Int = 0,
+    val lastSensorAlertAt: Long = 0L,
+    /** Surveiller et réparer xDrip+ (source « Companion App »). */
+    val xdripWatch: Boolean = true,
+    /** Début de la panne de collecte xDrip+ en cours, 0 sinon. */
+    val xdripBadSince: Long = 0L,
+    /** Rondes d'affilée où xDrip+ ne collectait pas. */
+    val xdripStreak: Int = 0,
+    val xdripAlerts: Int = 0,
+    val lastXdripAlertAt: Long = 0L,
+    val lastXdripRepairAt: Long = 0L,
+    val xdripRepairs: Int = 0,
     val checks: Int = 0,
     val btFixes: Int = 0,
     val relaunches: Int = 0,
@@ -70,6 +85,16 @@ class Prefs private constructor(private val sp: SharedPreferences) {
         lastHintAt = sp.getLong("lastHintAt", 0L),
         btLossStreak = sp.getInt("btLossStreak", 0),
         appDeadStreak = sp.getInt("appDeadStreak", 0),
+        sensorLostAt = sp.getLong("sensorLostAt", 0L),
+        sensorAlerts = sp.getInt("sensorAlerts", 0),
+        lastSensorAlertAt = sp.getLong("lastSensorAlertAt", 0L),
+        xdripWatch = sp.getBoolean("xdripWatch", true),
+        xdripBadSince = sp.getLong("xdripBadSince", 0L),
+        xdripStreak = sp.getInt("xdripStreak", 0),
+        xdripAlerts = sp.getInt("xdripAlerts", 0),
+        lastXdripAlertAt = sp.getLong("lastXdripAlertAt", 0L),
+        lastXdripRepairAt = sp.getLong("lastXdripRepairAt", 0L),
+        xdripRepairs = sp.getInt("xdripRepairs", 0),
         checks = sp.getInt("checks", 0),
         btFixes = sp.getInt("btFixes", 0),
         relaunches = sp.getInt("relaunches", 0),
@@ -93,6 +118,16 @@ class Prefs private constructor(private val sp: SharedPreferences) {
             .putLong("lastHintAt", p.lastHintAt)
             .putInt("btLossStreak", p.btLossStreak)
             .putInt("appDeadStreak", p.appDeadStreak)
+            .putLong("sensorLostAt", p.sensorLostAt)
+            .putInt("sensorAlerts", p.sensorAlerts)
+            .putLong("lastSensorAlertAt", p.lastSensorAlertAt)
+            .putBoolean("xdripWatch", p.xdripWatch)
+            .putLong("xdripBadSince", p.xdripBadSince)
+            .putInt("xdripStreak", p.xdripStreak)
+            .putInt("xdripAlerts", p.xdripAlerts)
+            .putLong("lastXdripAlertAt", p.lastXdripAlertAt)
+            .putLong("lastXdripRepairAt", p.lastXdripRepairAt)
+            .putInt("xdripRepairs", p.xdripRepairs)
             .putInt("checks", p.checks)
             .putInt("btFixes", p.btFixes)
             .putInt("relaunches", p.relaunches)

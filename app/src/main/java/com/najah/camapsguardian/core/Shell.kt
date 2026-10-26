@@ -2,15 +2,27 @@ package com.najah.camapsguardian.core
 
 import android.content.pm.PackageManager
 import com.najah.camapsguardian.R
+import rikka.shizuku.Shizuku
+import rikka.shizuku.ShizukuRemoteProcess
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 /**
- * Exécution de commandes privilégiées : root (su) puis Shizuku, sans dépendance externe
- * (Shizuku est appelé par réflexion : l'application fonctionne même s'il n'est pas installé).
+ * Exécution de commandes privilégiées : root (su) puis Shizuku.
+ *
+ * Avec Shizuku, la commande tourne dans le serveur Shizuku, avec les droits du shell (comme
+ * une commande adb), par `Shizuku.newProcess`. Le « UserService » recommandé par Shizuku
+ * plante sur Android 15 au démarrage de son processus (NullPointerException dans
+ * LoadedApk.makeApplicationInner, constaté le 26/10/2026 sur le Hammer) : on ne l'utilise pas.
+ * Sans root, Shizuku s'arrête à chaque redémarrage du téléphone : son état est relu à chaque
+ * appel, jamais mis en cache.
  */
 object Shell {
 
     data class Result(val ok: Boolean, val output: String, val how: String)
+
+    private const val SHIZUKU_REQUEST = 4301
 
     @Volatile
     private var rootChecked = false
@@ -18,11 +30,11 @@ object Shell {
     @Volatile
     private var rootOk = false
 
+    /** Dernier état Shizuku journalisé (on ne note que les changements). */
     @Volatile
-    private var shizukuChecked = false
+    private var shizukuLogged: Boolean? = null
 
-    @Volatile
-    private var shizukuOk = false
+    private val listeners = AtomicBoolean(false)
 
     // ---------------------------------------------------------------- exec
 
@@ -62,44 +74,59 @@ object Shell {
 
     // ---------------------------------------------------------------- Shizuku
 
-    private fun shizukuClass(): Class<*>? = try {
-        Class.forName("rikka.shizuku.Shizuku")
-    } catch (t: Throwable) {
-        null
-    }
-
-    fun hasShizuku(): Boolean {
-        if (shizukuChecked) return shizukuOk
-        shizukuChecked = true
-        val c = shizukuClass()
-        shizukuOk = if (c == null) {
-            false
-        } else {
-            try {
-                val ping = c.getMethod("pingBinder").invoke(null) as? Boolean ?: false
-                val granted = try {
-                    (c.getMethod("checkSelfPermission").invoke(null) as? Int) ==
-                        PackageManager.PERMISSION_GRANTED
-                } catch (t: Throwable) {
-                    false
+    private fun installListeners() {
+        if (!listeners.compareAndSet(false, true)) return
+        runCatching {
+            Shizuku.addRequestPermissionResultListener { code, result ->
+                if (code == SHIZUKU_REQUEST) {
+                    Logbook.add(
+                        t(R.string.cat_shell),
+                        t(
+                            if (result == PackageManager.PERMISSION_GRANTED) R.string.log_shizuku_granted
+                            else R.string.log_shizuku_denied
+                        )
+                    )
                 }
-                ping && granted
-            } catch (t: Throwable) {
-                false
             }
         }
-        Logbook.add(
-            t(R.string.cat_shell),
-            if (shizukuOk) t(R.string.log_shizuku_ok) else t(R.string.log_shizuku_absent)
-        )
-        return shizukuOk
     }
 
-    /** À appeler depuis l'interface (thread principal) : affiche la demande d'autorisation Shizuku. */
+    /** Shizuku démarré, assez récent (API 11+) et autorisé pour Guardian. */
+    fun hasShizuku(): Boolean {
+        installListeners()
+        val ok = try {
+            Shizuku.pingBinder() && !Shizuku.isPreV11() &&
+                Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        } catch (t: Throwable) {
+            false
+        }
+        if (shizukuLogged != ok) {
+            shizukuLogged = ok
+            Logbook.add(
+                t(R.string.cat_shell),
+                if (ok) t(R.string.log_shizuku_ok) else t(R.string.log_shizuku_absent)
+            )
+        }
+        return ok
+    }
+
+    /** Shizuku tourne-t-il (autorisé ou non) ? */
+    fun shizukuRunning(): Boolean = try {
+        Shizuku.pingBinder()
+    } catch (t: Throwable) {
+        false
+    }
+
+    /** À appeler depuis l'interface : affiche la demande d'autorisation de Shizuku. */
     fun requestShizukuPermission(): Boolean {
-        val c = shizukuClass() ?: return false
+        installListeners()
         return try {
-            c.getMethod("requestPermission", Integer.TYPE).invoke(null, 0)
+            if (!Shizuku.pingBinder()) {
+                Logbook.add(t(R.string.cat_shell), t(R.string.log_shizuku_not_running))
+                return false
+            }
+            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) return true
+            Shizuku.requestPermission(SHIZUKU_REQUEST)
             Logbook.add(t(R.string.cat_shell), t(R.string.log_shizuku_requested))
             true
         } catch (ex: Throwable) {
@@ -111,36 +138,38 @@ object Shell {
         }
     }
 
-    private fun shizukuExec(command: String): Result? {
-        val c = shizukuClass() ?: return null
+    /** `newProcess` est privée depuis l'API 13 de Shizuku, mais toujours là : appel par réflexion. */
+    private val newProcess by lazy {
+        Shizuku::class.java.getDeclaredMethod(
+            "newProcess",
+            Array<String>::class.java,
+            Array<String>::class.java,
+            String::class.java
+        ).apply { isAccessible = true }
+    }
+
+    private fun shizukuExec(command: String): Result {
         return try {
-            val m = c.getMethod(
-                "newProcess",
-                Array<String>::class.java,
-                Array<String>::class.java,
-                String::class.java
-            )
-            val p = m.invoke(null, arrayOf("sh", "-c", command), null, null) as? Process
-                ?: return Result(false, t(R.string.log_shizuku_null_process), "shizuku")
-            val finished = p.waitFor(20_000L, TimeUnit.MILLISECONDS)
-            val out = try {
-                p.inputStream.bufferedReader().use { it.readText() }
-            } catch (t: Throwable) {
-                ""
+            val p = newProcess.invoke(null, arrayOf("sh", "-c", command), null, null) as ShizukuRemoteProcess
+            val out = StringBuilder()
+            // Lecture en parallèle : une sortie volumineuse (dumpsys) bloquerait sinon le processus.
+            val reader = thread(isDaemon = true) {
+                runCatching { out.append(p.inputStream.bufferedReader().readText()) }
             }
-            val err = try {
-                p.errorStream.bufferedReader().use { it.readText() }
-            } catch (t: Throwable) {
-                ""
+            val err = thread(isDaemon = true) {
+                runCatching { out.append(p.errorStream.bufferedReader().readText()) }
             }
-            if (!finished) {
+            if (!p.waitForTimeout(20, TimeUnit.SECONDS)) {
                 p.destroy()
                 Result(false, t(R.string.log_timeout), "shizuku")
             } else {
-                Result(p.exitValue() == 0, (out + err).trim(), "shizuku")
+                reader.join(3000L)
+                err.join(1000L)
+                Result(p.exitValue() == 0, out.toString().trim(), "shizuku")
             }
         } catch (ex: Throwable) {
-            Result(false, ex.message ?: t(R.string.log_shizuku_error), "shizuku")
+            val cause = (ex as? java.lang.reflect.InvocationTargetException)?.targetException ?: ex
+            Result(false, cause.message ?: t(R.string.log_shizuku_error), "shizuku")
         }
     }
 
@@ -153,7 +182,7 @@ object Shell {
             if (r.ok) return Result(true, r.output, "root")
         }
         if (hasShizuku()) {
-            shizukuExec(command)?.let { return it }
+            return shizukuExec(command)
         }
         return Result(false, t(R.string.log_no_privilege), "aucun")
     }
@@ -162,6 +191,6 @@ object Shell {
 
     fun resetCache() {
         rootChecked = false
-        shizukuChecked = false
+        shizukuLogged = null
     }
 }

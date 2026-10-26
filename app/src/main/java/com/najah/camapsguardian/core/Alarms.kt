@@ -24,6 +24,8 @@ object Alarms {
     private const val RC_CLOCK = 4101
     private const val RC_BACKUP = 4102
     private const val RC_SHOW = 4103
+    private const val RC_SENSOR = 4104
+    private const val RC_XDRIP = 4105
     private const val JOB_ID = 4201
 
     private fun tick(ctx: Context, rc: Int): PendingIntent = PendingIntent.getBroadcast(
@@ -87,6 +89,44 @@ object Alarms {
         scheduleJob(ctx)
     }
 
+    /**
+     * Ronde supplémentaire pour le rappel « aucun capteur » : il doit revenir à l'heure dite
+     * même si les rondes sont plus espacées (30 min) ou décalées. Le réveil passe par
+     * [WakeReceiver], qui relance une ronde et réarme la chaîne normale.
+     */
+    fun scheduleSensorReminder(ctx: Context, at: Long) {
+        val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        try {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, tick(ctx, RC_SENSOR))
+        } catch (t: Throwable) {
+            runCatching {
+                am.setAlarmClock(AlarmManager.AlarmClockInfo(at, show(ctx)), tick(ctx, RC_SENSOR))
+            }
+        }
+    }
+
+    fun cancelSensorReminder(ctx: Context) {
+        val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        runCatching { am.cancel(tick(ctx, RC_SENSOR)) }
+    }
+
+    /** Ronde de vérification après une réparation de xDrip+, ou rappel tant que la panne dure. */
+    fun scheduleXdripCheck(ctx: Context, at: Long) {
+        val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        try {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, tick(ctx, RC_XDRIP))
+        } catch (t: Throwable) {
+            runCatching {
+                am.setAlarmClock(AlarmManager.AlarmClockInfo(at, show(ctx)), tick(ctx, RC_XDRIP))
+            }
+        }
+    }
+
+    fun cancelXdripCheck(ctx: Context) {
+        val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        runCatching { am.cancel(tick(ctx, RC_XDRIP)) }
+    }
+
     /** Tâche persistante : survit au redémarrage et aux nettoyages de mémoire. */
     fun scheduleJob(ctx: Context) {
         try {
@@ -109,6 +149,8 @@ object Alarms {
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         runCatching { am.cancel(tick(ctx, RC_CLOCK)) }
         runCatching { am.cancel(tick(ctx, RC_BACKUP)) }
+        runCatching { am.cancel(tick(ctx, RC_SENSOR)) }
+        runCatching { am.cancel(tick(ctx, RC_XDRIP)) }
         runCatching {
             (ctx.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler).cancel(JOB_ID)
         }
