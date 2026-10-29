@@ -31,6 +31,16 @@ class PresenceListener : NotificationListenerService() {
             synchronized(active) { return HashSet(active) }
         }
 
+        /**
+         * Vrai si l'un de [pkgs] a une notification **publiée après** [since] : la preuve qu'il a
+         * redémarré. Une notification restée affichée depuis avant un arrêt forcé ne compte pas.
+         */
+        fun postedSince(pkgs: List<String>, since: Long): Boolean = try {
+            instance?.activeNotifications?.any { it.packageName in pkgs && it.postTime > since } == true
+        } catch (t: Throwable) {
+            false
+        }
+
         fun lastSeen(pkgs: List<String>): Long =
             pkgs.mapNotNull { seen[it] }.maxOrNull() ?: 0L
 

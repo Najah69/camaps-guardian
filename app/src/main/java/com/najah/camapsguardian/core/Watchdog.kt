@@ -83,6 +83,8 @@ class Watchdog(private val ctx: Context) {
                 cam.installed() + listOfNotNull(XdripWatch.PKG.takeIf { watchXdrip }, ctx.packageName)
             )
             probes?.values?.forEach { st -> actions += Privileged.protect(ctx, st) }
+            // Tueurs d'applications du constructeur (com.pri.screenoff.killer, 29/10/2026).
+            actions += KillerGuard.enforce(ctx)
 
             // ---------------------------------------------------------- 1. Bluetooth
             var btOn = bt.isOn()
@@ -134,6 +136,23 @@ class Watchdog(private val ctx: Context) {
                 } else if (presence.state == Presence.UNKNOWN) {
                     presence = presence.copy(
                         evidence = ctx.tr(R.string.ev_camaps_process) + " · " + presence.evidence
+                    )
+                }
+            }
+            // Un arrêt forcé reçu est une certitude : tant que CamAPS n'a pas prouvé qu'il a
+            // redémarré, il est mort — même si sa notification est encore affichée (29/10/2026).
+            val camPkg = presence.pkg ?: cam.installed().firstOrNull()
+            val forcedAt = camPkg?.let { ForceStops.since(it, now) }
+            if (camPkg != null && forcedAt != null) {
+                if (cam.restartedSince(listOf(camPkg), forcedAt)) {
+                    ForceStops.clear(camPkg)
+                } else {
+                    certain = true
+                    presence = PresenceInfo(
+                        Presence.NOT_ALIVE,
+                        ctx.tr(R.string.ev_camaps_force_stopped_event, Fmt.ago(ctx, forcedAt)) +
+                            " · " + presence.evidence,
+                        camPkg
                     )
                 }
             }

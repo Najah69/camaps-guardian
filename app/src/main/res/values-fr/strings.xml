@@ -462,4 +462,10 @@
     <string name="log_shizuku_hint">Shizuku arrêté depuis %1$s : rappel envoyé</string>
     <string name="log_shizuku_back">Shizuku de nouveau disponible (arrêté pendant %1$s)</string>
 
+    <string name="ev_camaps_force_stopped_event">CamAPS FX a été arrêté de force %1$s et n\'a pas redémarré depuis</string>
+    <string name="log_killer_disabled">tueur d\'applications %1$s retiré pour l\'utilisateur (effectif au prochain redémarrage)</string>
+    <string name="log_killer_failed">tueur d\'applications %1$s non désactivé : %2$s</string>
+    <string name="log_killer_needs_shizuku">tueur d\'applications %1$s actif : lancez Shizuku pour le désactiver</string>
+    <string name="notif_killer_title">Tueur d\'applications du téléphone actif</string>
+    <string name="notif_killer_text">%1$s peut arrêter CamAPS FX à l\'extinction de l\'écran. Lancez Shizuku : Guardian le désactivera.</string>
 </resources>

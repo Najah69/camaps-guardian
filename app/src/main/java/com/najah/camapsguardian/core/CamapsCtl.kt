@@ -191,6 +191,34 @@ class CamapsCtl(private val ctx: Context) {
         return null
     }
 
+    /**
+     * Vrai si [pkgs] a redémarré après [since] : passage au premier plan, démarrage de son service
+     * au premier plan, ou notification publiée depuis. Sert après un arrêt forcé.
+     */
+    fun restartedSince(pkgs: List<String>, since: Long): Boolean {
+        if (PresenceListener.postedSince(pkgs, since)) return true
+        if (!Sys.hasUsageAccess(ctx)) return false
+        val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return false
+        return try {
+            val events = usm.queryEvents(since, System.currentTimeMillis()) ?: return false
+            val e = UsageEvents.Event()
+            var found = false
+            while (events.getNextEvent(e)) {
+                if (e.timeStamp > since && pkgs.contains(e.packageName) &&
+                    (e.eventType == UsageEvents.Event.ACTIVITY_RESUMED ||
+                        (Build.VERSION.SDK_INT >= 29 &&
+                            e.eventType == UsageEvents.Event.FOREGROUND_SERVICE_START))
+                ) {
+                    found = true
+                    break
+                }
+            }
+            found
+        } catch (t: Throwable) {
+            false
+        }
+    }
+
     private fun lastForeground(pkgs: List<String>): Long {
         val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
             ?: return 0L

@@ -231,6 +231,8 @@ class WatchdogService : Service() {
                     (p.xdripWatch && pkg == XdripWatch.PKG)
                 if (!watched) return
                 Logbook.add(tr(R.string.cat_event), tr(R.string.log_force_stopped, pkg))
+                // Une certitude : la ronde ne se fiera plus à la notification restée affichée.
+                ForceStops.mark(pkg)
                 scope.launch {
                     // Laisser le système finir l'arrêt avant de regarder.
                     delay(20_000L)

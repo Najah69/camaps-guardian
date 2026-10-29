@@ -249,6 +249,25 @@ Le nom exact varie d'un modèle à l'autre. Cherchez dans les réglages les mots
 > CamAPS Guardian. S'il affiche **Surveillance active** sans que vous ayez rien fait, votre
 > configuration est bonne. Sinon, un réglage constructeur manque.
 
+### Les « tueurs d'applications » cachés (depuis la version 1.6)
+
+Certaines surcouches installent en plus un **composant système** qui arrête des applications
+quand l'écran s'éteint, sans tenir compte des réglages ci-dessus. Sur un Hammer Iron 6, le
+composant `com.pri.screenoff.killer` a ainsi **arrêté CamAPS FX de force** une nuit : la boucle est
+restée coupée une cinquantaine de minutes.
+
+- Le **désactiver ne suffit pas** : c'est une application système « persistante », relancée à chaque
+  démarrage. Il faut la **retirer pour votre utilisateur** (elle reste dans le système, réversible) :
+  `adb shell pm uninstall --user 0 com.pri.screenoff.killer` — pour la remettre :
+  `adb shell cmd package install-existing com.pri.screenoff.killer`.
+- Avec **Shizuku**, CamAPS Guardian le fait lui-même, et vérifie à chaque ronde qu'une mise à jour du
+  système ne l'a pas réinstallé. Sans Shizuku, il vous envoie une alerte.
+- Depuis la version 1.6, un **arrêt forcé** de CamAPS FX est tenu pour certain : Guardian le relance dès
+  la ronde suivante, même si l'ancienne notification de CamAPS FX est encore affichée.
+
+> Après un redémarrage, CamAPS FX ne démarre qu'au **premier déverrouillage** du téléphone : c'est le
+> fonctionnement normal d'Android. Déverrouillez sans attendre.
+
 ## 9. Comment savoir que ça marche
 
 1. Ouvrez CamAPS Guardian.

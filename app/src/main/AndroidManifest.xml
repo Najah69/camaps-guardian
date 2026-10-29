@@ -35,6 +35,8 @@
         <package android:name="com.camdiab.fx" />
         <package android:name="com.eveningoutpost.dexdrip" />
         <package android:name="moe.shizuku.privileged.api" />
+        <!-- Tueur d'applications du Hammer, neutralisé à chaque ronde (KillerGuard). -->
+        <package android:name="com.pri.screenoff.killer" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
