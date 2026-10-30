@@ -18,6 +18,8 @@ keystore.properties
 
 # Divers
 *.log
+# Journaux de compilation (build-NNN.txt)
+build-*.txt
 *.hprof
 .DS_Store
 Thumbs.db
